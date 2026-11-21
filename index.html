@@ -21,7 +21,21 @@
   if(!("DecompressionStream" in window))throw new Error("This browser does not support gzip decoding.");
   const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
   const html=await new Response(stream).text();
-  document.open();document.write(html);document.close();
+  const paymentPanel = `
+<section class="card full" id="paymentPanel">
+  <h2>Payment tracking</h2>
+  <p class="notice">After a profit share is posted, mark each person from that posted list as paid. Every change updates the existing Discord embed in place. This tracks the latest posted profit share.</p>
+  <div class="actions"><button class="secondary" id="loadPayments">Load latest payment list</button></div>
+  <div id="paymentStatus" class="status">Post a profit share first, then load its payment list. Use the private posting code above.</div>
+  <div id="paymentList" class="payments"></div>
+</section>`;
+  const enhanced = html.replace("</main>", paymentPanel + "</main>")
+    .replace('$("postCode").value="";', '// The posting code stays in this page session for payment updates.');
+  if (enhanced === html) throw new Error("Could not add the payment tracker to the calculator.");
+  document.open();document.write(enhanced);document.close();
+  const tracker = document.createElement("script");
+  tracker.src = "./payment-tracker.js?v=9e7365e";
+  document.body.appendChild(tracker);
  }catch(error){
   state.textContent="The calculator could not load: "+error.message+" Please refresh the page or contact the site owner.";
  }
