@@ -82,7 +82,7 @@
       const paid = (data.paid_names || []).length;
       const total = (data.participants || []).length;
       status.className = "status ok";
-      status.textContent = paid + " of " + total + " team members marked paid. Changes update the existing Discord embed.";
+      status.textContent = paid + " of " + total + " team members marked paid. Changes update the Discord status." + (data.payroll_ready ? " Main profit-share and payroll embeds are synced." : " Payroll channel is awaiting its webhook setup.");
     } catch (error) {
       status.className = "status err";
       status.textContent = "Could not load payments: " + error.message;
