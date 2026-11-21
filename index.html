@@ -21,7 +21,7 @@
   if(!("DecompressionStream" in window))throw new Error("This browser does not support gzip decoding.");
   const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
   const html=await new Response(stream).text();
-  document.open();document.write(html);document.close();
+  const enhanced=html.replace("</body>",'<script src="ui-customization.js"><\/script></body>'); if(enhanced===html) throw new Error("Could not attach the employee search controls."); document.open();document.write(enhanced);document.close();
  }catch(error){
   state.textContent="The calculator could not load: "+error.message+" Please refresh the page or contact the site owner.";
  }
