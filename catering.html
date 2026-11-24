@@ -1249,8 +1249,20 @@ label{color:#e9e4d6}
         menu_items:getSelectedMenuItems()
       });
       $("orderForm").reset();
+      document.querySelectorAll(".menu-check").forEach(check => {
+        check.checked = false;
+        const quantityInput = document.querySelector('.menu-qty[data-item-id="' + check.value + '"]');
+        quantityInput.value = "1";
+        quantityInput.disabled = true;
+      });
+      $("fulfilmentMethod").value = "collection";
+      renderMenuQuote();
+      const savedOrder = result.order || {};
+      const fulfilmentLabel = savedOrder.fulfilment_method === "delivery" ? "Delivery" : "Collection";
+      const totalLabel = "$" + Number(savedOrder.order_total ?? savedOrder.quote_total ?? 0).toLocaleString("en-US");
       status("customerStatus",
-        "Your catering order has been received. Reference: " + (result.order?.order_reference ? "#" + result.order.order_reference : "submitted") + ". "
+        "Your catering order has been received. Reference: " + (savedOrder.order_reference ? "#" + savedOrder.order_reference : "submitted")
+          + " · " + fulfilmentLabel + " · Total: " + totalLabel + ". "
           + (result.dashboard_message || "Staff dashboard notification pending.") + " "
           + (result.notification_message || "The WigWam team will review it."),
         result.dashboard_notified && result.customer_notified ? "ok" : "err");
