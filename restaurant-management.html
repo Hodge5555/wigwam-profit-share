@@ -68,7 +68,7 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
   <section class="intro">
     <span class="kicker">MANAGEMENT ACCESS ONLY</span>
     <h1>Restaurant Management</h1>
-    <p class="subtitle">Previous total sales, calculated from the sales logs posted in the WigWam Discord sales channel.</p>
+    <p class="subtitle">Previous total sales, recorded as each sales webhook message is delivered to Discord.</p>
   </section>
   <div id="accessStatus" role="status" aria-live="polite">Verifying Management access…</div>
   <section id="dashboard" class="hidden">
@@ -78,7 +78,7 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
           <h2>Total sales to date</h2>
           <p>All recognized sales log entries from the selected Discord channel.</p>
         </div>
-        <span class="kicker">AUTO-REFRESH · 60 SEC</span>
+        <span class="kicker">WEBHOOK INTAKE · AUTO-REFRESH 15 SEC</span>
       </div>
       <div class="total-caption">Previous total sales</div>
       <div id="totalAmounts" class="total-amounts">
@@ -86,7 +86,7 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
       </div>
       <div class="sales-stats">
         <div class="stat"><strong id="salesLogCount">—</strong><span>Sales logs counted</span></div>
-        <div class="stat"><strong id="lastSync">—</strong><span>Last successful sync</span></div>
+        <div class="stat"><strong id="lastSync">—</strong><span>Last sale received</span></div>
       </div>
       <div id="salesStatus" class="status" role="status" aria-live="polite">Reading previous sales logs…</div>
       <div class="source-row">
@@ -105,7 +105,7 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
   const TOKEN_KEY = "wigwamCateringAccessToken";
   const EXPIRY_KEY = "wigwamCateringAccessExpiry";
   const USER_KEY = "wigwamCateringUser";
-  const AUTO_REFRESH_MS = 60000;
+  const AUTO_REFRESH_MS = 15000;
   const $ = id => document.getElementById(id);
   let accessToken = "";
   let refreshing = false;
@@ -194,21 +194,15 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
       latest.textContent = "No sales log has been counted yet.";
     }
 
-    if (!data.log_count && Number(data.scanned_messages || 0) > 0 && Number(data.matched_messages || 0) === 0) {
+    if (!data.webhook_configured) {
       $("salesStatus").className = "status error";
-      $("salesStatus").textContent = "The bot read " + Number(data.scanned_messages).toLocaleString("en-GB") +
-        " Discord messages, but did not recognise a Business Revenue amount in them. The reader now checks message text and embed titles, descriptions, fields and footers. If this still says zero, the exact revenue label/value format needs matching.";
-    } else if (!data.backfill_complete) {
+      $("salesStatus").textContent = "Sales webhook setup is incomplete. Add DISCORD_SALES_WEBHOOK_URL and SALES_INGEST_TOKEN in Supabase Edge Function Secrets, then point the revenue sender at the WigWam webhook URL.";
+    } else if (!data.log_count) {
       $("salesStatus").className = "status";
-      $("salesStatus").textContent = "Building the previous total from older channel history. " +
-        Number(data.scanned_messages || 0).toLocaleString("en-GB") + " messages scanned and " +
-        Number(data.matched_messages || 0).toLocaleString("en-GB") + " recognised in this sync. The total will continue to fill in automatically.";
-    } else if (data.new_messages_pending) {
-      $("salesStatus").className = "status";
-      $("salesStatus").textContent = "Some new messages are still being processed. The next automatic refresh will continue.";
+      $("salesStatus").textContent = "Webhook relay is configured. Waiting for the first recognised Business Revenue message. New posts will be counted as they pass through WigWam.";
     } else {
       $("salesStatus").className = "status ok";
-      $("salesStatus").textContent = "Sales total is up to date. This page checks the channel for new logs every minute while open.";
+      $("salesStatus").textContent = "Sales are being recorded through the webhook relay. The total refreshes here every 15 seconds while this page is open.";
       if (totals.some(item => item.currency_code === "UNSPECIFIED")) {
         $("salesStatus").textContent += " Amounts marked with * did not include a currency symbol or code in the Discord log.";
       }
@@ -221,7 +215,7 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
     $("refresh").disabled = true;
     if (!silent) {
       $("salesStatus").className = "status";
-      $("salesStatus").textContent = "Checking the latest sales logs…";
+      $("salesStatus").textContent = "Refreshing saved sales totals…";
     }
     try {
       const data = await request({action:"restaurant_sales_total",access_token:accessToken});
