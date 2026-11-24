@@ -746,20 +746,9 @@ label{color:#e9e4d6}
   }
 
   function showSignedIn(user) {
-    account = user;
-    $("loginPanel").classList.add("hidden");
-    $("accountPanel").classList.remove("hidden");
-    $("welcome").textContent = "Welcome, " + user.displayName;
-    const roles = [];
-    if (user.isCustomer) roles.push("Customer");
-    if (user.isEmployee) roles.push("Employee");
-    if (user.isManagement) roles.push("Management");
-    const isStaff = Boolean(user.isEmployee || user.isManagement);
-    $("roleText").textContent = "Signed in as " + roles.join(" and ") + " via Discord";
-    $("customerSection").classList.toggle("hidden", !(user.isCustomer || isStaff));
-    $("employeeSection").classList.toggle("hidden", !isStaff);
-    $("testOrdersChannel").classList.toggle("hidden", !user.isManagement);
-    if (isStaff) loadOrders();
+    // This legacy URL is retained as the Discord sign-in gateway.
+    // After restoring a valid session, send members to the role-based home page.
+    window.location.replace("./home.html");
   }
 
   async function completeCallback() {
