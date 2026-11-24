@@ -45,43 +45,54 @@
   }
 
   function makeWidget() {
-    widget = document.createElement("aside");
-    widget.id = "wigwam-on-duty-widget";
-    widget.setAttribute("role", "status");
-    widget.setAttribute("aria-live", "polite");
-    widget.setAttribute("aria-atomic", "true");
-    widget.title = 'Live count of members with the Discord "Clocked In" role';
+    widget = document.getElementById("wigwam-on-duty-widget");
 
-    dotElement = document.createElement("span");
-    dotElement.className = "wigwam-duty-dot";
-    dotElement.setAttribute("aria-hidden", "true");
+    if (!widget) {
+      widget = document.createElement("aside");
+      widget.id = "wigwam-on-duty-widget";
+      widget.setAttribute("role", "status");
+      widget.setAttribute("aria-live", "polite");
+      widget.setAttribute("aria-atomic", "true");
+      widget.title = 'Live count of members with the Discord "Clocked In" role';
 
-    const copy = document.createElement("span");
-    copy.className = "wigwam-duty-copy";
+      const dot = document.createElement("span");
+      dot.className = "wigwam-duty-dot";
+      dot.setAttribute("aria-hidden", "true");
 
-    const label = document.createElement("span");
-    label.className = "wigwam-duty-label";
-    label.textContent = "WORKERS ON DUTY";
+      const copy = document.createElement("span");
+      copy.className = "wigwam-duty-copy";
 
-    countElement = document.createElement("strong");
-    countElement.className = "wigwam-duty-count";
-    countElement.textContent = "—";
+      const label = document.createElement("span");
+      label.className = "wigwam-duty-label";
+      label.textContent = "WORKERS ON DUTY";
 
-    detailElement = document.createElement("small");
-    detailElement.className = "wigwam-duty-detail";
-    detailElement.textContent = "Checking Discord…";
+      const count = document.createElement("strong");
+      count.className = "wigwam-duty-count";
+      count.textContent = "—";
 
-    copy.append(label, countElement, detailElement);
-    widget.append(dotElement, copy);
+      const detail = document.createElement("small");
+      detail.className = "wigwam-duty-detail";
+      detail.textContent = "Checking Discord…";
 
-    const header = document.querySelector("header");
-    const brand = header && header.querySelector(".wigwam-brand-lockup, .brand-lockup, .brand");
-    if (brand && brand.parentElement) {
-      brand.insertAdjacentElement("afterend", widget);
-    } else if (header) {
-      header.appendChild(widget);
-    } else {
-      document.body.insertBefore(widget, document.body.firstChild);
+      copy.append(label, count, detail);
+      widget.append(dot, copy);
+
+      const header = document.querySelector("header");
+      const brand = header && header.querySelector(".wigwam-brand-lockup, .brand-lockup, .brand");
+      if (brand && brand.parentElement) {
+        brand.insertAdjacentElement("afterend", widget);
+      } else if (header) {
+        header.appendChild(widget);
+      } else {
+        document.body.insertBefore(widget, document.body.firstChild);
+      }
+    }
+
+    dotElement = widget.querySelector(".wigwam-duty-dot");
+    countElement = widget.querySelector(".wigwam-duty-count");
+    detailElement = widget.querySelector(".wigwam-duty-detail");
+    if (!dotElement || !countElement || !detailElement) {
+      throw new Error("The Workers on Duty header display is missing one or more elements.");
     }
   }
 
