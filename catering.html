@@ -264,7 +264,9 @@ form{display:grid;gap:14px}.grid{display:grid;grid-template-columns:repeat(2,min
         id:orderId
       });
       await loadOrders();
-      status("employeeStatus",result.message || "Order claim updated.","ok");
+      const message = (result.message || "Order claim updated.")
+        + (result.dashboard_updated ? "" : " The Discord #orders card could not be refreshed.");
+      status("employeeStatus",message,result.dashboard_updated ? "ok" : "err");
     } catch (error) {
       status("employeeStatus",error.message,"err");
       await loadOrders();
