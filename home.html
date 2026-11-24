@@ -82,19 +82,13 @@ footer{max-width:1120px;margin:0 auto 28px;padding:0 22px;color:#716b5b;font-siz
       <p>Open the staff dashboard to view incoming orders, claim requests and update progress.</p>
       <span class="action">Open order dashboard →</span>
     </a>
-    <a class="tile hidden" id="payroll" href="./">
-      <span class="icon" aria-hidden="true">💷</span>
+    <a class="tile hidden" id="payroll">
+      <span class="lock-mark hidden" id="payrollLockMark">🔒 MANAGEMENT ONLY</span>
+      <span class="icon" id="payrollIcon" aria-hidden="true">💷</span>
       <h2>Payroll</h2>
-      <p>Open the WigWam profit-share calculator and payment tracking.</p>
-      <span class="action">Open payroll →</span>
+      <p id="payrollDescription">Open the WigWam profit-share calculator and payment tracking.</p>
+      <span class="action" id="payrollAction">Open payroll →</span>
     </a>
-    <div class="tile locked hidden" id="payrollLocked" aria-disabled="true">
-      <span class="lock-mark">🔒 MANAGEMENT ONLY</span>
-      <span class="icon" aria-hidden="true">🔒</span>
-      <h2>Payroll</h2>
-      <p>The payroll area is visible to staff, but access is restricted to members with the Management role.</p>
-      <span class="action">Locked · Management access required</span>
-    </div>
   </section>
 </main>
 <footer>WigWam · Fresh off the grill!</footer>
@@ -167,8 +161,30 @@ footer{max-width:1120px;margin:0 auto 28px;padding:0 22px;color:#716b5b;font-siz
       const isStaff = Boolean(user.isEmployee || user.isManagement);
       setTileVisibility("makeOrder",Boolean(user.isCustomer && !isStaff));
       setTileVisibility("cateringOrders",isStaff);
-      setTileVisibility("payroll",Boolean(user.isManagement));
-      setTileVisibility("payrollLocked",Boolean(user.isEmployee && !user.isManagement));
+
+      // One Payroll tile: active for Management, visibly locked for Employees.
+      const canUsePayroll = Boolean(user.isManagement);
+      const canSeePayroll = Boolean(user.isEmployee || user.isManagement);
+      const payrollTile = $("payroll");
+      setTileVisibility("payroll",canSeePayroll);
+      payrollTile.classList.toggle("locked",!canUsePayroll);
+      if (canUsePayroll) {
+        payrollTile.setAttribute("href","./");
+        payrollTile.removeAttribute("aria-disabled");
+        payrollTile.removeAttribute("tabindex");
+        $("payrollLockMark").classList.add("hidden");
+        $("payrollIcon").textContent = "💷";
+        $("payrollDescription").textContent = "Open the WigWam profit-share calculator and payment tracking.";
+        $("payrollAction").textContent = "Open payroll →";
+      } else {
+        payrollTile.removeAttribute("href");
+        payrollTile.setAttribute("aria-disabled","true");
+        payrollTile.setAttribute("tabindex","-1");
+        $("payrollLockMark").classList.remove("hidden");
+        $("payrollIcon").textContent = "🔒";
+        $("payrollDescription").textContent = "The payroll area is restricted to members with the Management role.";
+        $("payrollAction").textContent = "Locked · Management access required";
+      }
 
       $("status").hidden = true;
       $("status").classList.add("hidden");
