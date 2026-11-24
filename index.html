@@ -37,7 +37,13 @@
   <div id="paymentStatus" class="status">Post a profit share first, then load its payment list. Use the private posting code above.</div>
   <div id="paymentList" class="payments"></div>
 </section>`;
-  const enhanced = html.replace("</main>", paymentPanel + "</main>")
+  const cateringPanel = `
+<section class="card full" id="cateringPanel">
+  <h2>Catering orders</h2>
+  <p class="notice">Customers can place catering requests. Employees can review and manage received orders using their Discord server role.</p>
+  <div class="actions"><a class="button" href="./catering.html">Open catering orders</a></div>
+</section>`;
+  const enhanced = html.replace("</main>", paymentPanel + cateringPanel + "</main>")
     .replace('$("postCode").value="";', '// The posting code stays in this page session for payment updates.');
   if (enhanced === html) throw new Error("Could not add the payment tracker to the calculator.");
   document.open();document.write(enhanced);document.close();
