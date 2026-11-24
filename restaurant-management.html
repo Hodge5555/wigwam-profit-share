@@ -49,7 +49,32 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
 .latest{margin-top:13px;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
 .latest a{color:var(--gold);font-weight:850;text-decoration:none}
 #accessStatus.hidden{display:none!important}
-@media(max-width:700px){.head{padding:10px 14px}.brand{gap:9px}.brand img{width:75px;height:56px}main{margin:25px auto 45px;padding:0 14px}.sales-panel{padding:16px}.sales-stats{grid-template-columns:1fr}.total-amounts{grid-template-columns:1fr}}
+
+.employees-panel{margin-top:22px;padding:23px;border:1px solid #51420d;border-radius:18px;background:linear-gradient(145deg,#171717,#101010);box-shadow:0 15px 38px #0005}
+.employees-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.employees-head h2{margin:5px 0 0;color:#fff;font-size:23px;letter-spacing:-.035em}
+.employees-head p{margin:6px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+.employee-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:19px}
+.employee-stat{padding:17px;border:1px solid #403817;border-radius:13px;background:#090909;min-width:0}
+.employee-stat strong{display:block;font-size:clamp(28px,4vw,38px);font-weight:1000;line-height:1.1;letter-spacing:-.045em}
+.employee-stat span{display:block;margin-top:7px;font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#c7c0ac}
+.employee-stat.employee strong{color:#ffd000}
+.employee-stat.trainer strong{color:#72c9ff}
+.employee-stat.management strong{color:#c4a4ff}
+.employee-note{margin:13px 0 0;color:#aaa38f;font-size:11px;line-height:1.5}
+.employee-groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-top:17px}
+.employee-group{min-width:0;padding:15px;border:1px solid #38311d;border-radius:13px;background:#0c0c0c}
+.employee-group h3{display:flex;justify-content:space-between;gap:9px;align-items:center;margin:0 0 11px;color:#f6e8b4;font-size:14px}
+.employee-group h3 span{padding:4px 8px;border:1px solid #4b411e;border-radius:999px;color:var(--gold);font-size:11px;font-variant-numeric:tabular-nums}
+.employee-list{display:grid;gap:7px;max-height:360px;overflow:auto;padding-right:3px}
+.employee-member{padding:9px 10px;border:1px solid #28251c;border-radius:9px;background:#131313;min-width:0}
+.employee-member strong{display:block;color:#f8f5e8;font-size:12px;overflow-wrap:anywhere}
+.employee-member small{display:block;margin-top:3px;color:#918b7b;font-size:10px;overflow-wrap:anywhere}
+.employee-empty{padding:11px;color:#918b7b;font-size:12px;font-style:italic}
+.employees-panel .status{margin-top:14px}
+
+@media(max-width:850px){.employee-groups{grid-template-columns:1fr}.employee-list{max-height:260px}}
+@media(max-width:700px){.employee-stats{grid-template-columns:1fr}.employees-panel{padding:16px}.head{padding:10px 14px}.brand{gap:9px}.brand img{width:75px;height:56px}main{margin:25px auto 45px;padding:0 14px}.sales-panel{padding:16px}.sales-stats{grid-template-columns:1fr}.total-amounts{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -95,6 +120,40 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
       </div>
       <div id="latestLog" class="latest"></div>
     </div>
+
+    <section class="employees-panel" aria-labelledby="employeesTitle">
+      <div class="employees-head">
+        <div>
+          <span class="kicker">LIVE DISCORD ROLE ROSTER</span>
+          <h2 id="employeesTitle">Employees</h2>
+          <p>People assigned to the Employee, Trainer and Management roles in the WigWam server.</p>
+        </div>
+        <button id="refreshEmployees" type="button">Refresh team</button>
+      </div>
+
+      <div class="employee-stats" aria-label="Staff role statistics">
+        <div class="employee-stat employee"><strong id="employeeRoleCount">—</strong><span>Employee role</span></div>
+        <div class="employee-stat trainer"><strong id="trainerRoleCount">—</strong><span>Trainer role</span></div>
+        <div class="employee-stat management"><strong id="managementRoleCount">—</strong><span>Management role</span></div>
+      </div>
+      <p class="employee-note">Each figure is a separate role count. A person who has more than one of these Discord roles appears in each matching list.</p>
+      <div id="employeesStatus" class="status" role="status" aria-live="polite">Loading Discord role members…</div>
+
+      <div class="employee-groups">
+        <article class="employee-group">
+          <h3>Employee role <span id="employeeListCount">—</span></h3>
+          <div id="employeeList" class="employee-list"><div class="employee-empty">Loading members…</div></div>
+        </article>
+        <article class="employee-group">
+          <h3>Trainer role <span id="trainerListCount">—</span></h3>
+          <div id="trainerList" class="employee-list"><div class="employee-empty">Loading members…</div></div>
+        </article>
+        <article class="employee-group">
+          <h3>Management role <span id="managementListCount">—</span></h3>
+          <div id="managementList" class="employee-list"><div class="employee-empty">Loading members…</div></div>
+        </article>
+      </div>
+    </section>
   </section>
 </main>
 <script>
@@ -110,6 +169,8 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
   let accessToken = "";
   let refreshing = false;
   let autoRefreshTimer = null;
+  let employeeRefreshTimer = null;
+  let employeesRefreshing = false;
 
   function redirectToSignIn() {
     sessionStorage.removeItem(TOKEN_KEY);
@@ -209,6 +270,64 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
     }
   }
 
+  function renderEmployees(data) {
+    const groups = Array.isArray(data.groups) ? data.groups : [];
+    const config = [
+      {key:"employee",countId:"employeeRoleCount",listCountId:"employeeListCount",listId:"employeeList",label:"Employee"},
+      {key:"trainer",countId:"trainerRoleCount",listCountId:"trainerListCount",listId:"trainerList",label:"Trainer"},
+      {key:"management",countId:"managementRoleCount",listCountId:"managementListCount",listId:"managementList",label:"Management"}
+    ];
+
+    config.forEach(item => {
+      const group = groups.find(entry => entry.key === item.key) || {configured:false,count:0,members:[]};
+      const people = Array.isArray(group.members) ? group.members : [];
+      $(item.countId).textContent = Number(group.count ?? people.length).toLocaleString("en-GB");
+      $(item.listCountId).textContent = Number(group.count ?? people.length).toLocaleString("en-GB");
+      const list = $(item.listId);
+      list.replaceChildren();
+      if (!group.configured) {
+        list.append(node("div","employee-empty",item.label + " role is not configured in Discord."));
+        return;
+      }
+      if (!people.length) {
+        list.append(node("div","employee-empty","No members currently have this role."));
+        return;
+      }
+      people.forEach(person => {
+        const card = node("div","employee-member");
+        card.append(
+          node("strong","",person.display_name || person.username || "Discord member"),
+          node("small","",person.username ? "@" + person.username : "Discord member")
+        );
+        list.append(card);
+      });
+    });
+
+    const missing = groups.filter(group => !group.configured).map(group => group.label);
+    $("employeesStatus").className = missing.length ? "status" : "status ok";
+    $("employeesStatus").textContent = "Loaded " + Number(data.total_members_scanned || 0).toLocaleString("en-GB") +
+      " Discord server members · refreshed " + dateTime(data.retrieved_at) +
+      (missing.length ? " · Missing server role: " + missing.join(", ") + "." : ".");
+  }
+
+  async function syncEmployees() {
+    if (employeesRefreshing || !accessToken) return;
+    employeesRefreshing = true;
+    $("refreshEmployees").disabled = true;
+    $("employeesStatus").className = "status";
+    $("employeesStatus").textContent = "Reading Employee, Trainer and Management roles from Discord…";
+    try {
+      const data = await request({action:"restaurant_employees",access_token:accessToken});
+      renderEmployees(data);
+    } catch (error) {
+      $("employeesStatus").className = "status error";
+      $("employeesStatus").textContent = "Could not load the employee roster: " + (error.message || "Unknown error");
+    } finally {
+      employeesRefreshing = false;
+      $("refreshEmployees").disabled = false;
+    }
+  }
+
   async function syncSales(silent) {
     if (refreshing || !accessToken) return;
     refreshing = true;
@@ -247,11 +366,14 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
       $("accessStatus").classList.add("hidden");
       $("dashboard").classList.remove("hidden");
 
-      await syncSales(false);
+      await Promise.all([syncSales(false),syncEmployees()]);
 
       autoRefreshTimer = window.setInterval(() => {
         if (document.visibilityState === "visible") syncSales(true);
       },AUTO_REFRESH_MS);
+      employeeRefreshTimer = window.setInterval(() => {
+        if (document.visibilityState === "visible") syncEmployees();
+      },300000);
     } catch (error) {
       $("accessStatus").textContent = error.message || "Access could not be verified.";
       $("accessStatus").classList.add("error");
@@ -265,12 +387,17 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
   }
 
   $("refresh").addEventListener("click",() => syncSales(false));
+  $("refreshEmployees").addEventListener("click",syncEmployees);
   $("signOut").addEventListener("click",() => {
     if (autoRefreshTimer) window.clearInterval(autoRefreshTimer);
+    if (employeeRefreshTimer) window.clearInterval(employeeRefreshTimer);
     redirectToSignIn();
   });
   document.addEventListener("visibilitychange",() => {
-    if (document.visibilityState === "visible" && accessToken) syncSales(true);
+    if (document.visibilityState === "visible" && accessToken) {
+      syncSales(true);
+      syncEmployees();
+    }
   });
   start();
 })();
