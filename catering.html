@@ -374,7 +374,8 @@ label{color:#e9e4d6}
         iss:params.get("iss")
       });
       saveSession(data);
-      showSignedIn(data.user);
+      // After a successful Discord authorisation, send everyone to the role-based home dashboard.
+      window.location.replace("./home.html");
     } catch (error) {
       showLoginError(error);
     }
