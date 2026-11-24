@@ -34,7 +34,7 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
 .employees-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .employees-head h2{margin:5px 0 0;color:#fff;font-size:23px;letter-spacing:-.035em}
 .employees-head p{margin:6px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
-.employee-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:19px}
+.employee-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:19px}
 .employee-stat{display:block;width:100%;padding:17px;border:1px solid #403817;border-radius:13px;background:#090909;color:var(--white);font-family:inherit;text-align:left;min-width:0}
 .role-tile{cursor:pointer;transition:border-color .16s,transform .16s}
 .role-tile:hover{border-color:var(--gold);transform:translateY(-2px)}
@@ -45,6 +45,7 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
 .employee-stat.employee strong{color:#ffd000}
 .employee-stat.trainer strong{color:#72c9ff}
 .employee-stat.management strong{color:#c4a4ff}
+.employee-stat.customer strong{color:#8ee1a7}
 .employee-note{margin:13px 0 0;color:#aaa38f;font-size:11px;line-height:1.5}
 .role-sections{margin-top:17px}
 .role-section{min-width:0;padding:16px;border:1px solid #38311d;border-radius:13px;background:#0c0c0c}
@@ -88,8 +89,8 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
       <div class="employees-head">
         <div>
           <span class="kicker">LIVE DISCORD ROLE ROSTER</span>
-          <h2 id="employeesTitle">Employees</h2>
-          <p>People assigned to the Employee, Trainer and Management roles in the WigWam server.</p>
+          <h2 id="employeesTitle">People</h2>
+          <p>Browse members assigned to the Employee, Trainer, Management and Customer roles in the WigWam server.</p>
         </div>
         <button id="refreshEmployees" type="button">Refresh team</button>
       </div>
@@ -106,6 +107,9 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
         </button>
         <button class="employee-stat management role-tile" type="button" data-section="managementSection" aria-controls="managementSection">
           <strong id="managementRoleCount">—</strong><span>Management role</span><small class="tile-hint">View management roster →</small>
+        </button>
+        <button class="employee-stat customer role-tile" type="button" data-section="customerSection" aria-controls="customerSection">
+          <strong id="customerRoleCount">—</strong><span>Customer role</span><small class="tile-hint">View customer roster →</small>
         </button>
       </div>
 
@@ -130,6 +134,13 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
             <button class="backToRoles" type="button">← All sections</button>
           </div>
           <div id="managementList" class="employee-list" aria-live="polite"><div class="employee-empty">Loading members…</div></div>
+        </section>
+        <section id="customerSection" class="role-section hidden" aria-labelledby="customerSectionTitle">
+          <div class="role-section-head">
+            <div><h3 id="customerSectionTitle">Customers <span id="customerListCount" class="role-count">—</span></h3><p>People assigned the Customer role in the WigWam Discord server.</p></div>
+            <button class="backToRoles" type="button">← All sections</button>
+          </div>
+          <div id="customerList" class="employee-list" aria-live="polite"><div class="employee-empty">Loading members…</div></div>
         </section>
       </div>
     </section>
@@ -186,7 +197,8 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
     const config = [
       {key:"employee",countId:"employeeRoleCount",listCountId:"employeeListCount",listId:"employeeList",label:"Employee"},
       {key:"trainer",countId:"trainerRoleCount",listCountId:"trainerListCount",listId:"trainerList",label:"Trainer"},
-      {key:"management",countId:"managementRoleCount",listCountId:"managementListCount",listId:"managementList",label:"Management"}
+      {key:"management",countId:"managementRoleCount",listCountId:"managementListCount",listId:"managementList",label:"Management"},
+      {key:"customer",countId:"customerRoleCount",listCountId:"customerListCount",listId:"customerList",label:"Customers"}
     ];
 
     config.forEach(item => {
@@ -240,7 +252,7 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
     employeesRefreshing = true;
     $("refreshEmployees").disabled = true;
     $("employeesStatus").className = "status";
-    $("employeesStatus").textContent = "Reading Employee, Trainer and Management roles from Discord…";
+    $("employeesStatus").textContent = "Reading Employee, Trainer, Management and Customer roles from Discord…";
     try {
       const data = await request({action:"restaurant_employees",access_token:accessToken});
       renderEmployees(data);
