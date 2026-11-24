@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#070707">
 <title>WigWam · Restaurant Management</title>
-<meta name="description" content="Management-only restaurant sales totals from the WigWam sales log channel.">
+<meta name="description" content="Management-only Discord role roster for WigWam employees, trainers and management.">
 <style>
 :root{color-scheme:dark;--black:#070707;--panel:#151515;--gold:#ffd000;--white:#f8f5e8;--muted:#b8b3a4;--line:#51420d;--green:#8ee1a7}
 *{box-sizing:border-box}
@@ -139,7 +139,7 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
       cache:"no-store"
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || ("Restaurant sales service returned HTTP " + response.status));
+    if (!response.ok) throw new Error(data.error || ("Restaurant Management service returned HTTP " + response.status));
     return data;
   }
 
