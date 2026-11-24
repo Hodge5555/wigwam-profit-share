@@ -50,6 +50,7 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
 .role-section{min-width:0;padding:16px;border:1px solid #38311d;border-radius:13px;background:#0c0c0c}
 .role-section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:13px}
 .role-section-head h3{margin:0;color:#f6e8b4;font-size:18px}
+.role-count{display:inline-block;margin-left:7px;padding:3px 8px;border:1px solid #4b411e;border-radius:999px;color:var(--gold);font-size:11px;vertical-align:middle}
 .role-section-head p{margin:5px 0 0;color:#aaa38f;font-size:11px;line-height:1.45}
 .role-section .employee-list{max-height:460px}
 .role-section .employee-list:empty::after{content:"No members to display.";color:#918b7b}
@@ -111,24 +112,24 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
       <div id="roleSections" class="role-sections hidden">
         <section id="employeeSection" class="role-section hidden" aria-labelledby="employeeSectionTitle">
           <div class="role-section-head">
-            <div><h3 id="employeeSectionTitle">Employee role</h3><p>People assigned the Employee role in the WigWam Discord server.</p></div>
+            <div><h3 id="employeeSectionTitle">Employee role <span id="employeeListCount" class="role-count">—</span></h3><p>People assigned the Employee role in the WigWam Discord server.</p></div>
             <button class="backToRoles" type="button">← All sections</button>
           </div>
-          <div class="employee-list" aria-live="polite"><strong id="employeeListCount" class="hidden">—</strong><div id="employeeList"><div class="employee-empty">Loading members…</div></div></div>
+          <div id="employeeList" class="employee-list" aria-live="polite"><div class="employee-empty">Loading members…</div></div>
         </section>
         <section id="trainerSection" class="role-section hidden" aria-labelledby="trainerSectionTitle">
           <div class="role-section-head">
-            <div><h3 id="trainerSectionTitle">Trainer role</h3><p>People assigned the Trainer role in the WigWam Discord server.</p></div>
+            <div><h3 id="trainerSectionTitle">Trainer role <span id="trainerListCount" class="role-count">—</span></h3><p>People assigned the Trainer role in the WigWam Discord server.</p></div>
             <button class="backToRoles" type="button">← All sections</button>
           </div>
-          <div class="employee-list" aria-live="polite"><strong id="trainerListCount" class="hidden">—</strong><div id="trainerList"><div class="employee-empty">Loading members…</div></div></div>
+          <div id="trainerList" class="employee-list" aria-live="polite"><div class="employee-empty">Loading members…</div></div>
         </section>
         <section id="managementSection" class="role-section hidden" aria-labelledby="managementSectionTitle">
           <div class="role-section-head">
-            <div><h3 id="managementSectionTitle">Management role</h3><p>People assigned the Management role in the WigWam Discord server.</p></div>
+            <div><h3 id="managementSectionTitle">Management role <span id="managementListCount" class="role-count">—</span></h3><p>People assigned the Management role in the WigWam Discord server.</p></div>
             <button class="backToRoles" type="button">← All sections</button>
           </div>
-          <div class="employee-list" aria-live="polite"><strong id="managementListCount" class="hidden">—</strong><div id="managementList"><div class="employee-empty">Loading members…</div></div></div>
+          <div id="managementList" class="employee-list" aria-live="polite"><div class="employee-empty">Loading members…</div></div>
         </section>
       </div>
     </section>
