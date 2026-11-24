@@ -892,7 +892,7 @@ label{color:#e9e4d6}
   }
 
   async function deleteOrder(order, button) {
-    const reference = String(order.id || "").replace(/-/g,"").slice(-8).toUpperCase();
+    const reference = order.order_reference ? "#" + order.order_reference : String(order.id || "").replace(/-/g,"").slice(-8).toUpperCase();
     const customer = order.customer_display_name || order.customer_username || "this customer";
     const confirmed = window.confirm(
       "Permanently delete order " + reference + " for " + customer + "?\n\n"
@@ -983,6 +983,7 @@ label{color:#e9e4d6}
         card.append(top);
 
         const details = el("div","details");
+        addDetail(details,"Order reference",order.order_reference ? "#" + order.order_reference : "Legacy order");
         addDetail(details,"Event date",new Date(order.event_at).toLocaleString("en-GB"));
         addDetail(details,"Guests",String(order.guest_count));
         addDetail(details,"Location",order.delivery_location);
@@ -1152,7 +1153,7 @@ label{color:#e9e4d6}
       });
       $("orderForm").reset();
       status("customerStatus",
-        "Your catering order has been received. Reference: " + (result.order?.id || "submitted") + ". "
+        "Your catering order has been received. Reference: " + (result.order?.order_reference ? "#" + result.order.order_reference : "submitted") + ". "
           + (result.dashboard_message || "Staff dashboard notification pending.") + " "
           + (result.notification_message || "The WigWam team will review it."),
         result.dashboard_notified && result.customer_notified ? "ok" : "err");
