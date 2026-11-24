@@ -799,7 +799,7 @@ body.page-order #employeeSection{display:none!important}
     const state = randomString(32);
     const challenge = await sha256(verifier);
     const reference = new URLSearchParams(window.location.search).get("ref") || "";
-    if (!/^\\d{1,15}$/.test(reference)) throw new Error("The order reference in this link is invalid.");
+    if (!/^\d{1,15}$/.test(reference)) throw new Error("The order reference in this link is invalid.");
     const returnTo = "./amend-order.html?ref=" + reference;
     sessionStorage.setItem(PENDING_KEY, JSON.stringify({verifier,state,returnTo}));
     const url = new URL("https://discord.com/oauth2/authorize");
@@ -910,7 +910,7 @@ body.page-order #employeeSection{display:none!important}
 
   async function loadOrderForAmendment() {
     editingReference = new URLSearchParams(window.location.search).get("ref") || "";
-    if (!/^\\d{1,15}$/.test(editingReference)) {
+    if (!/^\d{1,15}$/.test(editingReference)) {
       status("customerStatus","The order reference in this link is invalid.","err");
       $("submitOrder").disabled = true;
       return;
