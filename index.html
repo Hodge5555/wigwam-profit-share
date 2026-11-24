@@ -33,7 +33,7 @@
 <section class="card full" id="paymentPanel">
   <h2>Payment tracking</h2>
   <p class="notice">After a profit share is posted, mark each person from that posted list as paid. Every change updates the existing Discord embed in place. This tracks the latest posted profit share.</p>
-  <div class="actions"><button class="secondary" id="loadPayments">Load latest payment list</button></div>
+  <div class="actions"><button class="secondary" id="loadPayments">Load latest payment list</button><button class="secondary" id="syncDiscordEmployees">Sync Discord Employees</button></div>
   <div id="paymentStatus" class="status">Post a profit share first, then load its payment list. Use the private posting code above.</div>
   <div id="paymentList" class="payments"></div>
 </section>`;
@@ -42,7 +42,7 @@
   if (enhanced === html) throw new Error("Could not add the payment tracker to the calculator.");
   document.open();document.write(enhanced);document.close();
   const tracker = document.createElement("script");
-  tracker.src = "./payment-tracker.js?v=check-bonus-button-26";
+  tracker.src = "./payment-tracker.js?v=employee-role-sync-1";
   document.body.appendChild(tracker);
  }catch(error){
   state.textContent="The calculator could not load: "+error.message+" Please refresh the page or contact the site owner.";
