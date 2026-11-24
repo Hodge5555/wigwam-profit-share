@@ -207,6 +207,17 @@ label{color:#e9e4d6}
 .order-menu-summary ul{margin:0;padding-left:20px;color:#f2eee2;font-size:13px}
 .order-menu-summary li{margin:4px 0}
 .order-menu-total{margin-top:9px;padding-top:8px;border-top:1px solid #40360f;color:#ffd000;font-weight:900}
+.order-reference-search{margin:14px 0 18px;padding:14px;border:1px solid #51420e;border-radius:12px;background:#111}
+.order-reference-search label{display:block;margin-bottom:7px;color:#ffd000;font-size:12px;font-weight:900}
+.order-search-controls{display:flex;gap:8px;flex-wrap:wrap}
+.order-search-controls input{flex:1 1 220px;min-width:0}
+.payment-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;padding:12px;border:1px solid #49400f;border-radius:11px;background:#13120d}
+.payment-status{font-size:13px;font-weight:950;letter-spacing:.04em}
+.payment-status.paid{color:#8ce0a5}
+.payment-status.unpaid{color:#ffd16b}
+.payment-meta{display:block;color:#9f9989;font-size:11px;font-weight:500;letter-spacing:0;margin-top:3px}
+.quote-total-wrap #quoteBreakdown{margin-top:5px;color:#c8bd8b;font-size:11px;line-height:1.4;white-space:nowrap}
+@media(max-width:650px){.order-search-controls{display:grid;grid-template-columns:1fr 1fr}.order-search-controls input{grid-column:1/-1}}
 @media(max-width:650px){.menu-builder{padding:13px;margin:18px 0}.menu-item-grid{grid-template-columns:1fr;padding:0 8px 8px}.menu-quote{align-items:flex-start;flex-direction:column}.quote-total-wrap{text-align:left}.menu-builder-top h3{font-size:21px}}
 
 </style>
@@ -242,7 +253,13 @@ label{color:#e9e4d6}
     <div class="grid">
       <div class="field"><label for="eventAt">Event date and time</label><input id="eventAt" type="datetime-local" required></div>
       <div class="field"><label for="guestCount">Number of guests</label><input id="guestCount" type="number" min="1" max="500" step="1" placeholder="e.g. 25" required></div>
-      <div class="field full"><label for="location">Delivery / event location</label><input id="location" maxlength="300" placeholder="Where should the catering go?" required></div>
+      <div class="field full"><label for="location">Collection / delivery location</label><input id="location" maxlength="300" placeholder="Enter the event or delivery location." required></div>
+      <div class="field"><label for="fulfilmentMethod">Collection or delivery</label>
+        <select id="fulfilmentMethod">
+          <option value="collection">Collection — no extra charge</option>
+          <option value="delivery">Delivery — add $100</option>
+        </select>
+      </div>
     </div>
     <section class="menu-builder" aria-labelledby="menuTitle">
       <div class="menu-builder-top">
@@ -590,7 +607,7 @@ label{color:#e9e4d6}
       </div>
       <div class="menu-quote" aria-live="polite">
         <div><span class="menu-kicker">YOUR QUOTE</span><strong id="quoteItemCount">0 items selected</strong><p id="quoteSummary">Choose items from the menu to build your quote.</p></div>
-        <div class="quote-total-wrap"><small>Estimated total</small><strong id="quoteTotal">$0</strong></div>
+        <div class="quote-total-wrap"><small>Estimated total</small><strong id="quoteTotal">$0</strong><p id="quoteBreakdown">Items: $0 · Collection: $0</p></div>
       </div>
     </section>
     <div class="grid order-extra-fields">
@@ -606,6 +623,14 @@ label{color:#e9e4d6}
 <section class="panel hidden" id="employeeSection">
   <div class="order-top"><div><h2>Received catering orders</h2><p class="muted">Only Discord members with the Employee or Management role can view and manage this list.</p></div><div class="actions"><button class="secondary" id="refreshOrders" type="button">Refresh orders</button><button class="secondary hidden" id="testOrdersChannel" type="button">Test #orders connection</button></div></div>
   <div id="employeeStatus" class="status" aria-live="polite">Loading received orders…</div>
+  <div class="order-reference-search">
+    <label for="orderReferenceSearch">Find an order by reference</label>
+    <div class="order-search-controls">
+      <input id="orderReferenceSearch" type="search" inputmode="numeric" placeholder="Enter order reference, e.g. 106 or #106">
+      <button id="searchOrders" type="button">Search</button>
+      <button id="clearOrderSearch" class="secondary" type="button">Clear</button>
+    </div>
+  </div>
   <div id="orders" class="orders"></div>
 </section>
 </main>
@@ -806,11 +831,20 @@ label{color:#e9e4d6}
     });
   }
 
+  function getFulfilmentMethod() {
+    return $("fulfilmentMethod").value === "delivery" ? "delivery" : "collection";
+  }
+
   function renderMenuQuote() {
     const selected = getSelectedMenuItems();
     const count = selected.reduce((sum,item) => sum + (Number.isInteger(item.quantity) && item.quantity > 0 ? item.quantity : 0),0);
+    const itemsSubtotal = count * 500;
+    const deliveryFee = getFulfilmentMethod() === "delivery" ? 100 : 0;
+    const total = itemsSubtotal + deliveryFee;
     $("quoteItemCount").textContent = count + (count === 1 ? " item selected" : " items selected");
-    $("quoteTotal").textContent = "$" + (count * 500).toLocaleString("en-US");
+    $("quoteTotal").textContent = "$" + total.toLocaleString("en-US");
+    $("quoteBreakdown").textContent = "Items: $" + itemsSubtotal.toLocaleString("en-US")
+      + " · Delivery: $" + deliveryFee.toLocaleString("en-US");
     if (!selected.length) {
       $("quoteSummary").textContent = "Choose items from the menu to build your quote.";
       return;
@@ -823,6 +857,7 @@ label{color:#e9e4d6}
   }
 
   function initialiseMenuBuilder() {
+    $("fulfilmentMethod").addEventListener("change",renderMenuQuote);
     document.querySelectorAll(".menu-check").forEach(check => {
       check.addEventListener("change",() => {
         const quantityInput = document.querySelector('.menu-qty[data-item-id="' + check.value + '"]');
@@ -922,6 +957,10 @@ label{color:#e9e4d6}
     try {
       const data = await request({action:"list_orders",access_token:accessToken});
       const allOrders = Array.isArray(data.orders) ? data.orders : [];
+      const rawReferenceSearch = $("orderReferenceSearch").value.trim().replace(/^#/,"").toLowerCase();
+      const visibleOrders = rawReferenceSearch
+        ? allOrders.filter(order => String(order.order_reference ?? "").toLowerCase().includes(rawReferenceSearch))
+        : allOrders;
       const isCompleted = order => ["completed","cancelled"].includes(String(order.status || "").toLowerCase());
       const isUpcoming = order => ["confirmed","preparing","ready"].includes(String(order.status || "").toLowerCase());
       const groups = [
@@ -929,27 +968,28 @@ label{color:#e9e4d6}
           key:"pending",
           title:"Pending",
           description:"New requests waiting to be confirmed and claimed.",
-          orders:allOrders.filter(order => !isCompleted(order) && !isUpcoming(order))
+          orders:visibleOrders.filter(order => !isCompleted(order) && !isUpcoming(order))
             .sort((a,b) => new Date(b.created_at) - new Date(a.created_at))
         },
         {
           key:"upcoming",
           title:"Upcoming",
           description:"Confirmed orders that are being prepared or are ready.",
-          orders:allOrders.filter(isUpcoming)
+          orders:visibleOrders.filter(isUpcoming)
             .sort((a,b) => new Date(a.event_at) - new Date(b.event_at))
         },
         {
           key:"completed",
           title:"Completed",
           description:"Finished or cancelled orders.",
-          orders:allOrders.filter(isCompleted)
+          orders:visibleOrders.filter(isCompleted)
             .sort((a,b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at))
         }
       ];
-      const unclaimed = allOrders.filter(order => !order.claimed_by_discord_id && !isCompleted(order)).length;
+      const unclaimed = visibleOrders.filter(order => !order.claimed_by_discord_id && !isCompleted(order)).length;
       status("employeeStatus",
-        allOrders.length + " order(s) across 3 categories · " + unclaimed + " available to claim.",
+        visibleOrders.length + " order(s) shown" + (rawReferenceSearch ? " matching #" + rawReferenceSearch : "")
+          + " · " + unclaimed + " available to claim.",
         "ok");
 
       const categoryTargets = {};
@@ -986,6 +1026,10 @@ label{color:#e9e4d6}
         addDetail(details,"Order reference",order.order_reference ? "#" + order.order_reference : "Legacy order");
         addDetail(details,"Event date",new Date(order.event_at).toLocaleString("en-GB"));
         addDetail(details,"Guests",String(order.guest_count));
+        addDetail(details,"Fulfilment",order.fulfilment_method === "delivery" ? "Delivery" : "Collection");
+        addDetail(details,"Delivery fee","$" + Number(order.delivery_fee ?? 0).toLocaleString("en-US"));
+        addDetail(details,"Order total","$" + Number(order.order_total ?? order.quote_total ?? 0).toLocaleString("en-US"));
+        addDetail(details,"Payment",order.is_paid ? "PAID" : "UNPAID");
         addDetail(details,"Location",order.delivery_location);
         addDetail(details,"Contact",order.customer_contact);
         card.append(details);
@@ -1004,8 +1048,9 @@ label{color:#e9e4d6}
         }
         menuSummary.append(menuList);
         menuSummary.append(el("div","order-menu-total",
-          "Quote: $" + Number(order.quote_total ?? 0).toLocaleString("en-US")
-            + " · " + Number(order.quote_item_count ?? 0) + " item(s) at $500 each"));
+          "Items: $" + Number(order.quote_total ?? 0).toLocaleString("en-US")
+            + " · Delivery: $" + Number(order.delivery_fee ?? 0).toLocaleString("en-US")
+            + " · Total: $" + Number(order.order_total ?? order.quote_total ?? 0).toLocaleString("en-US")));
         card.append(menuSummary);
         if (String(order.order_details || "").trim()) {
           card.append(el("strong","","Additional notes"));
@@ -1038,6 +1083,46 @@ label{color:#e9e4d6}
           claimBar.append(releaseButton);
         }
         card.append(claimBar);
+
+        const canChangePayment = Boolean(isMine || account?.isManagement);
+        const paymentBar = el("div","payment-bar");
+        const paymentLabel = el("div");
+        const paid = Boolean(order.is_paid);
+        paymentLabel.append(el("span","payment-status " + (paid ? "paid" : "unpaid"),paid ? "✓ PAID" : "● UNPAID"));
+        if (paid && order.paid_by_display_name) {
+          paymentLabel.append(el("small","payment-meta","Recorded by " + order.paid_by_display_name
+            + (order.paid_at ? " · " + new Date(order.paid_at).toLocaleString("en-GB") : "")));
+        }
+        paymentBar.append(paymentLabel);
+        if (canChangePayment) {
+          const paymentButton = el("button",paid ? "secondary" : "","Mark as " + (paid ? "Unpaid" : "Paid"));
+          paymentButton.type = "button";
+          paymentButton.addEventListener("click",async () => {
+            paymentButton.disabled = true;
+            status("employeeStatus","Saving payment status for order #" + (order.order_reference || "") + "…");
+            try {
+              const result = await request({
+                action:"set_payment_status",
+                access_token:accessToken,
+                id:order.id,
+                is_paid:!paid
+              });
+              await loadOrders();
+              let message = result.message || "Payment status updated.";
+              if (result.dashboard_error) message += " Discord card refresh failed: " + result.dashboard_error;
+              else if (result.changed && !result.dashboard_updated) message += " The Discord card could not be refreshed.";
+              status("employeeStatus",message,result.dashboard_error ? "err" : "ok");
+            } catch(error) {
+              status("employeeStatus",error.message,"err");
+              paymentButton.disabled = false;
+            }
+          });
+          paymentBar.append(paymentButton);
+        } else {
+          paymentBar.append(el("small","payment-meta",
+            isClaimed ? "Only the claiming employee or Management can change payment." : "Claim this order to manage payment."));
+        }
+        card.append(paymentBar);
 
         if (account?.isManagement) {
           const managementActions = el("div","actions");
@@ -1131,6 +1216,17 @@ label{color:#e9e4d6}
 
   initialiseMenuBuilder();
   $("refreshOrders").addEventListener("click",loadOrders);
+  $("searchOrders").addEventListener("click",loadOrders);
+  $("orderReferenceSearch").addEventListener("keydown",event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      loadOrders();
+    }
+  });
+  $("clearOrderSearch").addEventListener("click",() => {
+    $("orderReferenceSearch").value = "";
+    loadOrders();
+  });
   $("testOrdersChannel").addEventListener("click",() => testOrdersChannel($("testOrdersChannel")));
 
   $("orderForm").addEventListener("submit", async event => {
@@ -1146,6 +1242,7 @@ label{color:#e9e4d6}
         event_at:eventAt.toISOString(),
         guest_count:Number($("guestCount").value),
         delivery_location:$("location").value,
+        fulfilment_method:getFulfilmentMethod(),
         order_details:$("orderDetails").value,
         dietary_requirements:$("dietary").value,
         customer_contact:$("contact").value,
