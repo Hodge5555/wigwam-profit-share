@@ -72,7 +72,7 @@ form{display:grid;gap:14px}.grid{display:grid;grid-template-columns:repeat(2,min
 </section>
 
 <section class="panel hidden" id="employeeSection">
-  <div class="order-top"><div><h2>Received catering orders</h2><p class="muted">Only Discord members with the Employee role can view and manage this list.</p></div><button class="secondary" id="refreshOrders" type="button">Refresh orders</button></div>
+  <div class="order-top"><div><h2>Received catering orders</h2><p class="muted">Only Discord members with the Employee or Management role can view and manage this list.</p></div><div class="actions"><button class="secondary" id="refreshOrders" type="button">Refresh orders</button><button class="secondary hidden" id="testOrdersChannel" type="button">Test #orders connection</button></div></div>
   <div id="employeeStatus" class="status" aria-live="polite">Loading received orders…</div>
   <div id="orders" class="orders"></div>
 </section>
@@ -201,6 +201,7 @@ form{display:grid;gap:14px}.grid{display:grid;grid-template-columns:repeat(2,min
     $("roleText").textContent = "Signed in as " + roles.join(" and ") + " via Discord";
     $("customerSection").classList.toggle("hidden", !user.isCustomer);
     $("employeeSection").classList.toggle("hidden", !isStaff);
+    $("testOrdersChannel").classList.toggle("hidden", !user.isManagement);
     if (isStaff) loadOrders();
   }
 
@@ -287,6 +288,31 @@ form{display:grid;gap:14px}.grid{display:grid;grid-template-columns:repeat(2,min
     } catch (error) {
       status("employeeStatus",error.message,"err");
       await loadOrders();
+    }
+  }
+
+  async function testOrdersChannel(button) {
+    button.disabled = true;
+    status("employeeStatus","Testing the configured #orders channel. No order will be created and staff will not be pinged…");
+    try {
+      const result = await request({
+        action:"test_orders_channel",
+        access_token:accessToken
+      });
+      if (result.ok && result.message_sent && result.message_removed) {
+        status("employeeStatus",
+          "Connection test passed: the bot posted a temporary embed in #" + (result.channel_name || "orders")
+            + " (" + result.channel_id + ") and removed it successfully. No order was created and nobody was pinged.",
+          "ok");
+      } else {
+        status("employeeStatus",
+          result.error || "The channel test did not fully complete. " + (result.message || ""),
+          "err");
+      }
+    } catch (error) {
+      status("employeeStatus",error.message,"err");
+    } finally {
+      button.disabled = false;
     }
   }
 
@@ -508,6 +534,7 @@ form{display:grid;gap:14px}.grid{display:grid;grid-template-columns:repeat(2,min
   });
 
   $("refreshOrders").addEventListener("click",loadOrders);
+  $("testOrdersChannel").addEventListener("click",() => testOrdersChannel($("testOrdersChannel")));
 
   $("orderForm").addEventListener("submit", async event => {
     event.preventDefault();
