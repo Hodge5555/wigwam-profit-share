@@ -28,6 +28,9 @@ h1{font-size:clamp(30px,5vw,48px);line-height:1.04;margin:8px 0;color:#fff;font-
 #status{padding:16px 18px;border:1px solid var(--line);border-radius:13px;background:#14130e;color:#d9d2bd}
 #status.error{border-color:#74312b;background:#211210;color:#ffaaa2}
 #status.hidden{display:none!important}
+/* Role-specific cards must stay hidden even though .tile sets display:flex. */
+.hidden,[hidden]{display:none!important}
+#makeOrder.hidden,#cateringOrders.hidden,#payroll.hidden,#payrollLocked.hidden{display:none!important}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
 .tile{position:relative;display:flex;flex-direction:column;min-height:230px;padding:25px;border-radius:19px;border:1px solid #51420d;background:linear-gradient(145deg,#1b1b1b,#101010);color:var(--white);text-decoration:none;box-shadow:0 15px 38px #0005;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease;overflow:hidden}
 .tile:not(.locked):hover{transform:translateY(-3px);border-color:var(--gold);box-shadow:0 20px 44px #0008,0 0 0 1px #ffd00022}
@@ -129,6 +132,13 @@ footer{max-width:1120px;margin:0 auto 28px;padding:0 22px;color:#716b5b;font-siz
     $("status").classList.add("error");
   }
 
+  function setTileVisibility(id,visible) {
+    const tile = $(id);
+    tile.hidden = !visible;
+    tile.classList.toggle("hidden",!visible);
+    tile.style.display = visible ? "" : "none";
+  }
+
   async function start() {
     const token = sessionStorage.getItem(TOKEN_KEY) || "";
     const expiry = Number(sessionStorage.getItem(EXPIRY_KEY) || "0");
@@ -155,12 +165,14 @@ footer{max-width:1120px;margin:0 auto 28px;padding:0 22px;color:#716b5b;font-siz
       $("roleName").textContent = roleNames.join(" · ");
 
       const isStaff = Boolean(user.isEmployee || user.isManagement);
-      $("makeOrder").classList.toggle("hidden",!user.isCustomer);
-      $("cateringOrders").classList.toggle("hidden",!isStaff);
-      $("payroll").classList.toggle("hidden",!(user.isManagement));
-      $("payrollLocked").classList.toggle("hidden",!(user.isEmployee && !user.isManagement));
+      setTileVisibility("makeOrder",Boolean(user.isCustomer && !isStaff));
+      setTileVisibility("cateringOrders",isStaff);
+      setTileVisibility("payroll",Boolean(user.isManagement));
+      setTileVisibility("payrollLocked",Boolean(user.isEmployee && !user.isManagement));
 
+      $("status").hidden = true;
       $("status").classList.add("hidden");
+      $("tiles").hidden = false;
       $("tiles").classList.remove("hidden");
     } catch(error) {
       showError(error.message + " Please sign in again.");
