@@ -104,7 +104,6 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
   const TOKEN_KEY = "wigwamCateringAccessToken";
   const EXPIRY_KEY = "wigwamCateringAccessExpiry";
   const USER_KEY = "wigwamCateringUser";
-  const CATEGORY_ID = "1540325425971073085";
   const $ = id => document.getElementById(id);
 
   async function request(payload) {
@@ -295,7 +294,9 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
     if (data.truncated) {
       showStatus("Some channel history exceeded the service's retrieval limit. The page shows the newest records returned; contact an administrator to review the older backlog.", "error");
     } else if (data.channels.length === 0) {
-      showStatus("The category is visible, but no readable text channels were found.", "error");
+      showStatus("The category is visible, but no readable text or announcement channels were found.", "error");
+    } else if (Array.isArray(data.unsupported_channels) && data.unsupported_channels.length) {
+      showStatus("Records loaded from text and announcement channels. " + data.unsupported_channels.length + " other channel(s), such as forum or voice channels, are not included in this view.", "ok");
     } else {
       showStatus("Restaurant records loaded successfully from Discord.", "ok");
     }
@@ -306,7 +307,7 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
     button.disabled = true;
     showStatus("Loading records from the Restaurant Management Discord category…");
     try {
-      const data = await request({action:"restaurant_management_records",access_token:accessToken,CATEGORY_ID});
+      const data = await request({action:"restaurant_management_records",access_token:accessToken});
       renderRecords(data);
       $("dashboard").classList.remove("hidden");
     } catch (error) {
