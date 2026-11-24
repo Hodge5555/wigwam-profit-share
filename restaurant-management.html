@@ -35,17 +35,24 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
 .employees-head h2{margin:5px 0 0;color:#fff;font-size:23px;letter-spacing:-.035em}
 .employees-head p{margin:6px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
 .employee-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:19px}
-.employee-stat{padding:17px;border:1px solid #403817;border-radius:13px;background:#090909;min-width:0}
+.employee-stat{display:block;width:100%;padding:17px;border:1px solid #403817;border-radius:13px;background:#090909;color:var(--white);font-family:inherit;text-align:left;min-width:0}
+.role-tile{cursor:pointer;transition:border-color .16s,transform .16s}
+.role-tile:hover{border-color:var(--gold);transform:translateY(-2px)}
+.role-tile:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 .employee-stat strong{display:block;font-size:clamp(28px,4vw,38px);font-weight:1000;line-height:1.1;letter-spacing:-.045em}
 .employee-stat span{display:block;margin-top:7px;font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#c7c0ac}
+.role-tile .tile-hint{display:block;margin-top:11px;color:#aaa38f;font-size:10px;font-weight:750;letter-spacing:.04em;text-transform:none}
 .employee-stat.employee strong{color:#ffd000}
 .employee-stat.trainer strong{color:#72c9ff}
 .employee-stat.management strong{color:#c4a4ff}
 .employee-note{margin:13px 0 0;color:#aaa38f;font-size:11px;line-height:1.5}
-.employee-groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-top:17px}
-.employee-group{min-width:0;padding:15px;border:1px solid #38311d;border-radius:13px;background:#0c0c0c}
-.employee-group h3{display:flex;justify-content:space-between;gap:9px;align-items:center;margin:0 0 11px;color:#f6e8b4;font-size:14px}
-.employee-group h3 span{padding:4px 8px;border:1px solid #4b411e;border-radius:999px;color:var(--gold);font-size:11px;font-variant-numeric:tabular-nums}
+.role-sections{margin-top:17px}
+.role-section{min-width:0;padding:16px;border:1px solid #38311d;border-radius:13px;background:#0c0c0c}
+.role-section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:13px}
+.role-section-head h3{margin:0;color:#f6e8b4;font-size:18px}
+.role-section-head p{margin:5px 0 0;color:#aaa38f;font-size:11px;line-height:1.45}
+.role-section .employee-list{max-height:460px}
+.role-section .employee-list:empty::after{content:"No members to display.";color:#918b7b}
 .employee-list{display:grid;gap:7px;max-height:360px;overflow:auto;padding-right:3px}
 .employee-member{padding:9px 10px;border:1px solid #28251c;border-radius:9px;background:#131313;min-width:0}
 .employee-member strong{display:block;color:#f8f5e8;font-size:12px;overflow-wrap:anywhere}
@@ -86,27 +93,43 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
         <button id="refreshEmployees" type="button">Refresh team</button>
       </div>
 
-      <div class="employee-stats" aria-label="Staff role statistics">
-        <div class="employee-stat employee"><strong id="employeeRoleCount">—</strong><span>Employee role</span></div>
-        <div class="employee-stat trainer"><strong id="trainerRoleCount">—</strong><span>Trainer role</span></div>
-        <div class="employee-stat management"><strong id="managementRoleCount">—</strong><span>Management role</span></div>
-      </div>
-      <p class="employee-note">Each figure is a separate role count. A person who has more than one of these Discord roles appears in each matching list.</p>
       <div id="employeesStatus" class="status" role="status" aria-live="polite">Loading Discord role members…</div>
+      <p class="employee-note">Choose a tile to open that role's roster. A person with more than one Discord role appears in each matching section.</p>
 
-      <div class="employee-groups">
-        <article class="employee-group">
-          <h3>Employee role <span id="employeeListCount">—</span></h3>
-          <div id="employeeList" class="employee-list"><div class="employee-empty">Loading members…</div></div>
-        </article>
-        <article class="employee-group">
-          <h3>Trainer role <span id="trainerListCount">—</span></h3>
-          <div id="trainerList" class="employee-list"><div class="employee-empty">Loading members…</div></div>
-        </article>
-        <article class="employee-group">
-          <h3>Management role <span id="managementListCount">—</span></h3>
-          <div id="managementList" class="employee-list"><div class="employee-empty">Loading members…</div></div>
-        </article>
+      <div id="roleTiles" class="employee-stats" aria-label="Team sections">
+        <button class="employee-stat employee role-tile" type="button" data-section="employeeSection" aria-controls="employeeSection">
+          <strong id="employeeRoleCount">—</strong><span>Employee role</span><small class="tile-hint">View employee roster →</small>
+        </button>
+        <button class="employee-stat trainer role-tile" type="button" data-section="trainerSection" aria-controls="trainerSection">
+          <strong id="trainerRoleCount">—</strong><span>Trainer role</span><small class="tile-hint">View trainer roster →</small>
+        </button>
+        <button class="employee-stat management role-tile" type="button" data-section="managementSection" aria-controls="managementSection">
+          <strong id="managementRoleCount">—</strong><span>Management role</span><small class="tile-hint">View management roster →</small>
+        </button>
+      </div>
+
+      <div id="roleSections" class="role-sections hidden">
+        <section id="employeeSection" class="role-section hidden" aria-labelledby="employeeSectionTitle">
+          <div class="role-section-head">
+            <div><h3 id="employeeSectionTitle">Employee role</h3><p>People assigned the Employee role in the WigWam Discord server.</p></div>
+            <button class="backToRoles" type="button">← All sections</button>
+          </div>
+          <div class="employee-list" aria-live="polite"><strong id="employeeListCount" class="hidden">—</strong><div id="employeeList"><div class="employee-empty">Loading members…</div></div></div>
+        </section>
+        <section id="trainerSection" class="role-section hidden" aria-labelledby="trainerSectionTitle">
+          <div class="role-section-head">
+            <div><h3 id="trainerSectionTitle">Trainer role</h3><p>People assigned the Trainer role in the WigWam Discord server.</p></div>
+            <button class="backToRoles" type="button">← All sections</button>
+          </div>
+          <div class="employee-list" aria-live="polite"><strong id="trainerListCount" class="hidden">—</strong><div id="trainerList"><div class="employee-empty">Loading members…</div></div></div>
+        </section>
+        <section id="managementSection" class="role-section hidden" aria-labelledby="managementSectionTitle">
+          <div class="role-section-head">
+            <div><h3 id="managementSectionTitle">Management role</h3><p>People assigned the Management role in the WigWam Discord server.</p></div>
+            <button class="backToRoles" type="button">← All sections</button>
+          </div>
+          <div class="employee-list" aria-live="polite"><strong id="managementListCount" class="hidden">—</strong><div id="managementList"><div class="employee-empty">Loading members…</div></div></div>
+        </section>
       </div>
     </section>
   </section>
@@ -197,6 +220,20 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
       (missing.length ? " · Missing server role: " + missing.join(", ") + "." : ".");
   }
 
+  function openRoleSection(sectionId) {
+    $("roleTiles").classList.add("hidden");
+    $("roleSections").classList.remove("hidden");
+    document.querySelectorAll(".role-section").forEach(section => {
+      section.classList.toggle("hidden", section.id !== sectionId);
+    });
+  }
+
+  function showRoleTiles() {
+    $("roleSections").classList.add("hidden");
+    $("roleTiles").classList.remove("hidden");
+    document.querySelectorAll(".role-section").forEach(section => section.classList.add("hidden"));
+  }
+
   async function syncEmployees() {
     if (employeesRefreshing || !accessToken) return;
     employeesRefreshing = true;
@@ -250,6 +287,12 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
     }
   }
 
+  document.querySelectorAll(".role-tile").forEach(tile => {
+    tile.addEventListener("click",() => openRoleSection(tile.dataset.section));
+  });
+  document.querySelectorAll(".backToRoles").forEach(button => {
+    button.addEventListener("click",showRoleTiles);
+  });
   $("refreshEmployees").addEventListener("click",syncEmployees);
   $("signOut").addEventListener("click",() => {
     if (employeeRefreshTimer) window.clearInterval(employeeRefreshTimer);
