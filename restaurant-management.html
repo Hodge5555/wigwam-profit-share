@@ -194,11 +194,15 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
       latest.textContent = "No sales log has been counted yet.";
     }
 
-    if (!data.backfill_complete) {
+    if (!data.log_count && Number(data.scanned_messages || 0) > 0 && Number(data.matched_messages || 0) === 0) {
+      $("salesStatus").className = "status error";
+      $("salesStatus").textContent = "The bot read " + Number(data.scanned_messages).toLocaleString("en-GB") +
+        " Discord messages, but did not recognise a Business Revenue amount in them. The reader now checks message text and embed titles, descriptions, fields and footers. If this still says zero, the exact revenue label/value format needs matching.";
+    } else if (!data.backfill_complete) {
       $("salesStatus").className = "status";
       $("salesStatus").textContent = "Building the previous total from older channel history. " +
-        Number(data.scanned_messages || 0).toLocaleString("en-GB") +
-        " messages scanned in this sync. The total will continue to fill in automatically.";
+        Number(data.scanned_messages || 0).toLocaleString("en-GB") + " messages scanned and " +
+        Number(data.matched_messages || 0).toLocaleString("en-GB") + " recognised in this sync. The total will continue to fill in automatically.";
     } else if (data.new_messages_pending) {
       $("salesStatus").className = "status";
       $("salesStatus").textContent = "Some new messages are still being processed. The next automatic refresh will continue.";
