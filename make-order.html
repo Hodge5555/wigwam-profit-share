@@ -224,6 +224,18 @@ label{color:#e9e4d6}
 /* Customer ordering is its own page. Hide the received-orders inbox on this route. */
 body.page-order #employeeSection{display:none!important}
 .time-zone-note{display:block;margin-top:6px;color:#b8b3a4;font-size:11px;line-height:1.4}
+
+.confirmation-heading{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.confirmation-heading h2{margin:4px 0;color:#ffd000;font-size:clamp(25px,4vw,34px)}
+.confirmation-check{width:58px;height:58px;flex:0 0 58px;display:grid;place-items:center;border-radius:50%;background:#183823;border:1px solid #3d8653;color:#9ef0b6;font-size:30px;font-weight:950}
+.confirmation-reference{padding:15px 17px;border:1px solid #776000;border-radius:12px;background:#25200c;color:#d8d0b1;font-size:13px;margin-bottom:15px}
+.confirmation-reference strong{display:block;color:#ffd000;font-size:26px;letter-spacing:.03em;margin-top:3px}
+.confirmation-menu{margin:16px 0;padding:17px;border:1px solid #40360f;border-radius:13px;background:#101010}
+.confirmation-menu h3{margin:0 0 10px;color:#ffd000}
+.confirmation-menu ul{margin:0;padding-left:20px;color:#e8e2d3}
+.confirmation-menu li{padding:3px 0}
+.confirmation-total{margin-top:13px;padding-top:12px;border-top:1px solid #473a0d;color:#ffd000;font-weight:900}
+#collectionTimeField.hidden{display:none!important}
 </style>
 </head>
 <body class="page-order">
@@ -264,6 +276,7 @@ body.page-order #employeeSection{display:none!important}
           <option value="delivery">Delivery — add $100</option>
         </select>
       </div>
+      <div class="field" id="collectionTimeField"><label for="collectionTime">Collection time (EST / EDT)</label><input id="collectionTime" type="time" required><small class="time-zone-note">Choose the time you plan to collect your order. Times are US Eastern Time (New York).</small></div>
     </div>
     <section class="menu-builder" aria-labelledby="menuTitle">
       <div class="menu-builder-top">
@@ -624,6 +637,21 @@ body.page-order #employeeSection{display:none!important}
   <div id="customerStatus" class="status hidden" aria-live="polite"></div>
 </section>
 
+  <section class="panel hidden" id="orderConfirmation" aria-live="polite">
+    <div class="confirmation-heading">
+      <span class="confirmation-check" aria-hidden="true">✓</span>
+      <div><span class="menu-kicker">WIGWAM CATERING</span><h2>Order received!</h2><p id="confirmationLead" class="muted">Your order has been sent to the WigWam team.</p></div>
+    </div>
+    <div class="confirmation-reference">Order reference <strong id="confirmedOrderReference">—</strong></div>
+    <div class="details" id="confirmationDetails"></div>
+    <div class="confirmation-menu">
+      <h3>What's in your order</h3>
+      <ul id="confirmationMenuList"></ul>
+      <div class="confirmation-total" id="confirmationTotal"></div>
+    </div>
+    <div id="confirmationNotice" class="status" role="status"></div>
+    <div class="actions"><a class="btn secondary" href="./home.html">Back to Home</a><button id="placeAnotherOrder" type="button">Place another order</button></div>
+  </section>
 
 </main>
 <script>
@@ -654,6 +682,13 @@ body.page-order #employeeSection{display:none!important}
     }).format(date);
   }
 
+
+  function formatCollectionTime(value) {
+    const match = /^([01]\d|2[0-3]):([0-5]\d)/.exec(String(value || ""));
+    if (!match) return "Not selected";
+    const hour = Number(match[1]);
+    return String(hour % 12 || 12) + ":" + match[2] + (hour >= 12 ? " PM" : " AM") + " ET";
+  }
 
   function parseEasternDateTimeInput(value) {
     const match = /^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2})(?::([0-9]{2}))?$/.exec(String(value || ""));
@@ -897,6 +932,16 @@ body.page-order #employeeSection{display:none!important}
     return $("fulfilmentMethod").value === "delivery" ? "delivery" : "collection";
   }
 
+  function updateCollectionTimeVisibility() {
+    const isCollection = getFulfilmentMethod() === "collection";
+    const field = $("collectionTimeField");
+    const input = $("collectionTime");
+    field.classList.toggle("hidden",!isCollection);
+    input.required = isCollection;
+    input.disabled = !isCollection;
+    if (!isCollection) input.value = "";
+  }
+
   function renderMenuQuote() {
     const selected = getSelectedMenuItems();
     const count = selected.reduce((sum,item) => sum + (Number.isInteger(item.quantity) && item.quantity > 0 ? item.quantity : 0),0);
@@ -919,7 +964,11 @@ body.page-order #employeeSection{display:none!important}
   }
 
   function initialiseMenuBuilder() {
-    $("fulfilmentMethod").addEventListener("change",renderMenuQuote);
+    $("fulfilmentMethod").addEventListener("change",() => {
+      updateCollectionTimeVisibility();
+      renderMenuQuote();
+    });
+    updateCollectionTimeVisibility();
     document.querySelectorAll(".menu-check").forEach(check => {
       check.addEventListener("change",() => {
         const quantityInput = document.querySelector('.menu-qty[data-item-id="' + check.value + '"]');
@@ -943,6 +992,70 @@ body.page-order #employeeSection{display:none!important}
     detail.append(el("strong","",heading),el("div","",value || "—"));
     parent.append(detail);
   }
+
+  function resetOrderForm() {
+    $("orderForm").reset();
+    document.querySelectorAll(".menu-check").forEach(check => {
+      check.checked = false;
+      const quantityInput = document.querySelector('.menu-qty[data-item-id="' + check.value + '"]');
+      quantityInput.value = "1";
+      quantityInput.disabled = true;
+    });
+    $("fulfilmentMethod").value = "collection";
+    updateCollectionTimeVisibility();
+    renderMenuQuote();
+  }
+
+  function showOrderConfirmation(order,result) {
+    $("confirmedOrderReference").textContent = order.order_reference ? "#" + order.order_reference : "Submitted";
+    $("confirmationLead").textContent = "Thanks! Your request is in the WigWam order queue. The team will review it and update you on Discord.";
+    const details = $("confirmationDetails");
+    details.replaceChildren();
+    addDetail(details,"Event date and time",formatEasternDateTime(order.event_at));
+    addDetail(details,"Guests",String(order.guest_count ?? "—"));
+    addDetail(details,"Fulfilment",order.fulfilment_method === "delivery" ? "Delivery" : "Collection");
+    if (order.fulfilment_method === "collection") addDetail(details,"Collection time",formatCollectionTime(order.collection_time));
+    addDetail(details,"Location",order.delivery_location || "—");
+    addDetail(details,"Payment",order.is_paid ? "PAID" : "UNPAID");
+    const menuList = $("confirmationMenuList");
+    menuList.replaceChildren();
+    const items = Array.isArray(order.menu_items) ? order.menu_items : [];
+    if (items.length) {
+      items.forEach(item => {
+        const line = document.createElement("li");
+        const amount = Number(item.line_total ?? (Number(item.quantity) * 500));
+        line.textContent = Number(item.quantity) + " × " + item.name + " — $" + amount.toLocaleString("en-US");
+        menuList.append(line);
+      });
+    } else {
+      const line = document.createElement("li");
+      line.textContent = "No menu selections returned.";
+      menuList.append(line);
+    }
+    $("confirmationTotal").textContent = "Items: $" + Number(order.quote_total ?? 0).toLocaleString("en-US")
+      + " · Delivery: $" + Number(order.delivery_fee ?? 0).toLocaleString("en-US")
+      + " · Total: $" + Number(order.order_total ?? order.quote_total ?? 0).toLocaleString("en-US");
+    const notices = [
+      result.dashboard_message || "The team dashboard notification is pending.",
+      result.notification_message || "Your Discord confirmation is pending."
+    ];
+    $("confirmationNotice").textContent = notices.join(" ");
+    $("confirmationNotice").className = "status" + (result.dashboard_notified && result.customer_notified ? " ok" : " err");
+    $("customerStatus").classList.add("hidden");
+    $("customerSection").classList.add("hidden");
+    $("orderConfirmation").classList.remove("hidden");
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+
+  $("placeAnotherOrder").addEventListener("click",() => {
+    $("orderConfirmation").classList.add("hidden");
+    $("customerSection").classList.remove("hidden");
+    resetOrderForm();
+    $("customerStatus").classList.add("hidden");
+    window.scrollTo({top:0,behavior:"smooth"});
+  });
+
+
 
   async function handleClaimAction(action, orderId, button) {
     button.disabled = true;
@@ -1289,29 +1402,15 @@ body.page-order #employeeSection{display:none!important}
         guest_count:Number($("guestCount").value),
         delivery_location:$("location").value,
         fulfilment_method:getFulfilmentMethod(),
+        collection_time:getFulfilmentMethod() === "collection" ? $("collectionTime").value : null,
         order_details:$("orderDetails").value,
         dietary_requirements:$("dietary").value,
         customer_contact:$("contact").value,
         menu_items:getSelectedMenuItems()
       });
-      $("orderForm").reset();
-      document.querySelectorAll(".menu-check").forEach(check => {
-        check.checked = false;
-        const quantityInput = document.querySelector('.menu-qty[data-item-id="' + check.value + '"]');
-        quantityInput.value = "1";
-        quantityInput.disabled = true;
-      });
-      $("fulfilmentMethod").value = "collection";
-      renderMenuQuote();
       const savedOrder = result.order || {};
-      const fulfilmentLabel = savedOrder.fulfilment_method === "delivery" ? "Delivery" : "Collection";
-      const totalLabel = "$" + Number(savedOrder.order_total ?? savedOrder.quote_total ?? 0).toLocaleString("en-US");
-      status("customerStatus",
-        "Your catering order has been received. Reference: " + (savedOrder.order_reference ? "#" + savedOrder.order_reference : "submitted")
-          + " · " + fulfilmentLabel + " · Total: " + totalLabel + ". "
-          + (result.dashboard_message || "Staff dashboard notification pending.") + " "
-          + (result.notification_message || "The WigWam team will review it."),
-        result.dashboard_notified && result.customer_notified ? "ok" : "err");
+      resetOrderForm();
+      showOrderConfirmation(savedOrder,result);
     } catch (error) {
       status("customerStatus",error.message,"err");
     } finally {
