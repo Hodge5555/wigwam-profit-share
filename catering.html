@@ -79,7 +79,14 @@ form{display:grid;gap:14px}.grid{display:grid;grid-template-columns:repeat(2,min
       cache: "no-store"
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || ("Catering service returned HTTP " + response.status));
+    if (!response.ok) {
+      const retryAfter = Math.max(0, Math.ceil(Number(
+        data.retry_after_seconds || response.headers.get("Retry-After") || 0
+      )));
+      const error = new Error(data.error || ("Catering service returned HTTP " + response.status));
+      error.retryAfterSeconds = retryAfter;
+      throw error;
+    }
     return data;
   }
 
@@ -88,6 +95,30 @@ form{display:grid;gap:14px}.grid{display:grid;grid-template-columns:repeat(2,min
     el.textContent = message;
     el.className = "status" + (kind ? " " + kind : "");
     el.classList.remove("hidden");
+  }
+
+  function showLoginError(error) {
+    const seconds = Number(error?.retryAfterSeconds || 0);
+    if (!seconds) {
+      status("loginStatus", error?.message || "Discord sign-in failed. Please try again.", "err");
+      $("signIn").disabled = false;
+      return;
+    }
+
+    const retryAt = Date.now() + seconds * 1000;
+    $("signIn").disabled = true;
+    const updateCountdown = () => {
+      const remaining = Math.max(0, Math.ceil((retryAt - Date.now()) / 1000));
+      if (remaining <= 0) {
+        clearInterval(timer);
+        $("signIn").disabled = false;
+        status("loginStatus", "Discord is ready to retry. Please continue with Discord again.");
+      } else {
+        status("loginStatus", "Discord is temporarily rate limiting sign-in. Please wait " + remaining + " seconds before retrying.", "err");
+      }
+    };
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
   }
 
   function base64url(bytes) {
@@ -184,7 +215,7 @@ form{display:grid;gap:14px}.grid{display:grid;grid-template-columns:repeat(2,min
       saveSession(data);
       showSignedIn(data.user);
     } catch (error) {
-      status("loginStatus", error.message, "err");
+      showLoginError(error);
     }
     return true;
   }
