@@ -274,6 +274,23 @@ body.page-orders #customerSection{display:none!important}
   const USER_KEY = "wigwamCateringUser";
   const PENDING_KEY = "wigwamCateringOAuthPending";
   const $ = id => document.getElementById(id);
+
+  const EASTERN_TIME_ZONE = "America/New_York";
+
+  function formatEasternDateTime(value) {
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "Not supplied";
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: EASTERN_TIME_ZONE,
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "short"
+    }).format(date);
+  }
+
   let accessToken = "";
   let account = null;
 
@@ -651,13 +668,13 @@ body.page-orders #customerSection{display:none!important}
         const top = el("div","order-top");
         const summary = el("div");
         summary.append(el("h3","",order.customer_display_name || order.customer_username));
-        summary.append(el("div","small","Received " + new Date(order.created_at).toLocaleString("en-GB")));
+        summary.append(el("div","small","Received " + formatEasternDateTime(order.created_at)));
         top.append(summary,el("span","tag",String(order.status).replace(/_/g," ")));
         card.append(top);
 
         const details = el("div","details");
         addDetail(details,"Order reference",order.order_reference ? "#" + order.order_reference : "Legacy order");
-        addDetail(details,"Event date",new Date(order.event_at).toLocaleString("en-GB"));
+        addDetail(details,"Event date",formatEasternDateTime(order.event_at));
         addDetail(details,"Guests",String(order.guest_count));
         addDetail(details,"Fulfilment",order.fulfilment_method === "delivery" ? "Delivery" : "Collection");
         addDetail(details,"Delivery fee","$" + Number(order.delivery_fee ?? 0).toLocaleString("en-US"));
@@ -724,7 +741,7 @@ body.page-orders #customerSection{display:none!important}
         paymentLabel.append(el("span","payment-status " + (paid ? "paid" : "unpaid"),paid ? "✓ PAID" : "● UNPAID"));
         if (paid && order.paid_by_display_name) {
           paymentLabel.append(el("small","payment-meta","Recorded by " + order.paid_by_display_name
-            + (order.paid_at ? " · " + new Date(order.paid_at).toLocaleString("en-GB") : "")));
+            + (order.paid_at ? " · " + formatEasternDateTime(order.paid_at) : "")));
         }
         paymentBar.append(paymentLabel);
         if (canChangePayment) {
