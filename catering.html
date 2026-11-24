@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WigWam Catering Orders</title>
+<meta name="description" content="Order catering or manage incoming WigWam catering orders.">
+<style>
+:root{--ink:#34251b;--muted:#75675d;--line:#ead9cb;--paper:#fff;--wash:#f6f2ee;--accent:#9e4e12;--soft:#fff5ec;--green:#236b45;--red:#a22d2d}
+*{box-sizing:border-box}body{margin:0;background:var(--wash);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+header{background:#fff;border-bottom:1px solid var(--line)}.head{max-width:1040px;margin:auto;padding:22px 20px;display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
+h1{font-size:clamp(25px,4vw,36px);line-height:1.1;margin:0;color:var(--accent)}.sub{color:var(--muted);margin:8px 0 0}
+main{max-width:1040px;margin:28px auto;padding:0 20px 44px}.panel{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:18px;box-shadow:0 6px 22px #39200c08}
+h2{margin:0 0 14px;font-size:23px}h3{margin:0 0 10px;font-size:19px}.muted{color:var(--muted)}.small{font-size:13px;color:var(--muted)}
+a{color:var(--accent);font-weight:700}.btn,button{border:0;border-radius:10px;background:var(--accent);color:#fff;padding:11px 16px;font:700 14px system-ui;cursor:pointer;text-decoration:none;display:inline-flex;justify-content:center;align-items:center;gap:8px}
+button.secondary,.btn.secondary{background:#f4ece5;color:var(--ink)}button:disabled{opacity:.55;cursor:wait}
+.status{padding:12px 14px;background:#f7f2ed;border:1px solid var(--line);border-radius:10px;margin:12px 0;color:var(--muted)}.status.ok{color:var(--green);background:#f0f8f2}.status.err{color:var(--red);background:#fff4f3}
+.hidden{display:none!important}
+form{display:grid;gap:14px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{display:grid;gap:6px}.field.full{grid-column:1/-1}label{font-size:13px;font-weight:750}input,textarea,select{width:100%;padding:11px 12px;border:1px solid #d9c8b9;border-radius:9px;background:#fff;color:var(--ink);font:15px system-ui}textarea{min-height:100px;resize:vertical}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.orders{display:grid;gap:14px;margin-top:16px}.order{border:1px solid var(--line);border-radius:13px;padding:17px;background:#fff}.order-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.tag{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;background:#f4ece5;border-radius:100px;padding:5px 9px}.details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:15px 0}.detail{background:#faf7f4;border-radius:9px;padding:10px 12px;overflow-wrap:anywhere}.detail strong{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:3px}.order p{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0}.manage{display:grid;grid-template-columns:1fr 2fr auto;gap:10px;align-items:end;margin-top:12px}
+@media(max-width:650px){.panel{padding:18px}.grid,.details{grid-template-columns:1fr}.manage{grid-template-columns:1fr}.head{align-items:flex-start}}
+</style>
+</head>
+<body>
+<header><div class="head"><div><h1>WigWam Catering</h1><p class="sub">Place catering requests or manage incoming orders.</p></div><a class="btn secondary" href="./">← Back to WigWam</a></div></header>
+<main>
+<section class="panel" id="loginPanel">
+  <h2>Sign in with Discord</h2>
+  <p class="muted">Use the Discord account that has the Customer or Employee role in the WigWam server.</p>
+  <button id="signIn" type="button">Continue with Discord</button>
+  <div id="loginStatus" class="status">You will only see the catering area allowed by your current Discord role.</div>
+</section>
+
+<section class="panel hidden" id="accountPanel">
+  <div class="order-top"><div><h2 id="welcome">Welcome</h2><div class="small" id="roleText"></div></div><button class="secondary" id="signOut" type="button">Sign out</button></div>
+</section>
+
+<section class="panel hidden" id="customerSection">
+  <h2>Place a catering order</h2>
+  <p class="muted">Send your request to the WigWam team. An employee will review it and update its status.</p>
+  <form id="orderForm">
+    <div class="grid">
+      <div class="field"><label for="eventAt">Event date and time</label><input id="eventAt" type="datetime-local" required></div>
+      <div class="field"><label for="guestCount">Number of guests</label><input id="guestCount" type="number" min="1" max="500" step="1" placeholder="e.g. 25" required></div>
+      <div class="field full"><label for="location">Delivery / event location</label><input id="location" maxlength="300" placeholder="Where should the catering go?" required></div>
+      <div class="field full"><label for="orderDetails">What would you like to order?</label><textarea id="orderDetails" maxlength="4000" placeholder="List the food, drinks, quantities, serving requirements, or anything else we need to prepare." required></textarea></div>
+      <div class="field"><label for="dietary">Dietary requirements / allergies</label><textarea id="dietary" maxlength="2000" placeholder="Include allergies and dietary needs, or leave blank."></textarea></div>
+      <div class="field"><label for="contact">Best contact details (optional)</label><textarea id="contact" maxlength="200" placeholder="A phone number or other contact details."></textarea></div>
+    </div>
+    <div class="actions"><button id="submitOrder" type="submit">Send catering order</button></div>
+  </form>
+  <div id="customerStatus" class="status hidden" aria-live="polite"></div>
+</section>
+
+<section class="panel hidden" id="employeeSection">
+  <div class="order-top"><div><h2>Received catering orders</h2><p class="muted">Only Discord members with the Employee role can view and manage this list.</p></div><button class="secondary" id="refreshOrders" type="button">Refresh orders</button></div>
+  <div id="employeeStatus" class="status" aria-live="polite">Loading received orders…</div>
+  <div id="orders" class="orders"></div>
+</section>
+</main>
+<script>
+(() => {
+  "use strict";
+  const API = "https://mztgimetelvfsctqytqj.supabase.co/functions/v1/wigwam-catering";
+  const PUBLIC_KEY = "sb_publishable_C_WY9FIK32q25OD3NYoKhQ_WPXV8SbU";
+  const TOKEN_KEY = "wigwamCateringAccessToken";
+  const EXPIRY_KEY = "wigwamCateringAccessExpiry";
+  const USER_KEY = "wigwamCateringUser";
+  const PENDING_KEY = "wigwamCateringOAuthPending";
+  const $ = id => document.getElementById(id);
+  let accessToken = "";
+  let account = null;
+
+  async function request(payload) {
+    const response = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: PUBLIC_KEY },
+      body: JSON.stringify(payload),
+      cache: "no-store"
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || ("Catering service returned HTTP " + response.status));
+    return data;
+  }
+
+  function status(id, message, kind) {
+    const el = $(id);
+    el.textContent = message;
+    el.className = "status" + (kind ? " " + kind : "");
+    el.classList.remove("hidden");
+  }
+
+  function base64url(bytes) {
+    let binary = "";
+    bytes.forEach(byte => binary += String.fromCharCode(byte));
+    return btoa(binary).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  }
+
+  function randomString(length) {
+    const bytes = new Uint8Array(length);
+    crypto.getRandomValues(bytes);
+    return base64url(bytes);
+  }
+
+  async function sha256(value) {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+    return base64url(new Uint8Array(digest));
+  }
+
+  async function beginLogin() {
+    const config = await request({action:"config"});
+    const verifier = randomString(48);
+    const state = randomString(32);
+    const challenge = await sha256(verifier);
+    sessionStorage.setItem(PENDING_KEY, JSON.stringify({verifier,state}));
+    const url = new URL("https://discord.com/oauth2/authorize");
+    url.searchParams.set("client_id", config.client_id);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("redirect_uri", config.redirect_uri);
+    url.searchParams.set("scope", "identify guilds.members.read");
+    url.searchParams.set("state", state);
+    url.searchParams.set("code_challenge", challenge);
+    url.searchParams.set("code_challenge_method", "S256");
+    window.location.assign(url.toString());
+  }
+
+  function saveSession(data) {
+    accessToken = data.access_token;
+    account = data.user;
+    sessionStorage.setItem(TOKEN_KEY, accessToken);
+    sessionStorage.setItem(EXPIRY_KEY, String(Date.now() + data.expires_in * 1000));
+    sessionStorage.setItem(USER_KEY, JSON.stringify(account));
+  }
+
+  function clearSession() {
+    accessToken = "";
+    account = null;
+    [TOKEN_KEY,EXPIRY_KEY,USER_KEY,PENDING_KEY].forEach(key => sessionStorage.removeItem(key));
+  }
+
+  function showSignedIn(user) {
+    account = user;
+    $("loginPanel").classList.add("hidden");
+    $("accountPanel").classList.remove("hidden");
+    $("welcome").textContent = "Welcome, " + user.displayName;
+    const roles = [];
+    if (user.isCustomer) roles.push("Customer");
+    if (user.isEmployee) roles.push("Employee");
+    $("roleText").textContent = "Signed in as " + roles.join(" and ") + " via Discord";
+    $("customerSection").classList.toggle("hidden", !user.isCustomer);
+    $("employeeSection").classList.toggle("hidden", !user.isEmployee);
+    if (user.isEmployee) loadOrders();
+  }
+
+  async function completeCallback() {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (!code && !params.has("error")) return false;
+    history.replaceState({}, document.title, window.location.pathname);
+    if (params.has("error")) {
+      status("loginStatus", params.get("error_description") || "Discord sign-in was cancelled.", "err");
+      return true;
+    }
+    const pendingRaw = sessionStorage.getItem(PENDING_KEY);
+    if (!pendingRaw) {
+      status("loginStatus", "The sign-in request expired. Please try again.", "err");
+      return true;
+    }
+    let pending;
+    try { pending = JSON.parse(pendingRaw); } catch { pending = null; }
+    if (!pending || pending.state !== params.get("state")) {
+      status("loginStatus", "Discord sign-in could not be verified. Please try again.", "err");
+      return true;
+    }
+    sessionStorage.removeItem(PENDING_KEY);
+    try {
+      status("loginStatus", "Verifying your Discord account and server roles…");
+      const data = await request({
+        action:"exchange",
+        code,
+        code_verifier:pending.verifier,
+        iss:params.get("iss")
+      });
+      saveSession(data);
+      showSignedIn(data.user);
+    } catch (error) {
+      status("loginStatus", error.message, "err");
+    }
+    return true;
+  }
+
+  async function resumeSession() {
+    const expiry = Number(sessionStorage.getItem(EXPIRY_KEY) || "0");
+    accessToken = sessionStorage.getItem(TOKEN_KEY) || "";
+    if (!accessToken || expiry <= Date.now()) {
+      clearSession();
+      return;
+    }
+    try {
+      status("loginStatus", "Checking your current Discord roles…");
+      const data = await request({action:"session", access_token:accessToken});
+      showSignedIn(data.user);
+    } catch (error) {
+      clearSession();
+      status("loginStatus", error.message + " Please sign in again.", "err");
+    }
+  }
+
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function addDetail(parent, heading, value) {
+    const detail = el("div","detail");
+    detail.append(el("strong","",heading),el("div","",value || "—"));
+    parent.append(detail);
+  }
+
+  async function loadOrders() {
+    status("employeeStatus","Loading the latest received catering orders…");
+    $("orders").replaceChildren();
+    try {
+      const data = await request({action:"list_orders",access_token:accessToken});
+      if (!data.orders || data.orders.length === 0) {
+        status("employeeStatus","There are no catering orders yet.","ok");
+        return;
+      }
+      status("employeeStatus",data.orders.length + " recent order(s) shown. Newest orders appear first.","ok");
+      data.orders.forEach(order => {
+        const card = el("article","order");
+        const top = el("div","order-top");
+        const summary = el("div");
+        summary.append(el("h3","",order.customer_display_name || order.customer_username));
+        summary.append(el("div","small","Received " + new Date(order.created_at).toLocaleString("en-GB")));
+        top.append(summary,el("span","tag",String(order.status).replace(/_/g," ")));
+        card.append(top);
+        const details = el("div","details");
+        addDetail(details,"Event date",new Date(order.event_at).toLocaleString("en-GB"));
+        addDetail(details,"Guests",String(order.guest_count));
+        addDetail(details,"Location",order.delivery_location);
+        addDetail(details,"Contact",order.customer_contact);
+        card.append(details);
+        card.append(el("strong","","Order requirements"));
+        card.append(el("p","",order.order_details));
+        if (order.dietary_requirements) {
+          card.append(el("strong","","Dietary requirements / allergies"));
+          card.append(el("p","",order.dietary_requirements));
+        }
+        const controls = el("div","manage");
+        const statusField = el("div","field");
+        statusField.append(el("label","","Order status"));
+        const select = el("select");
+        ["received","confirmed","preparing","ready","completed","cancelled"].forEach(value => {
+          const option = el("option","",value.charAt(0).toUpperCase()+value.slice(1));
+          option.value = value;
+          select.append(option);
+        });
+        select.value = order.status;
+        statusField.append(select);
+        const noteField = el("div","field");
+        noteField.append(el("label","","Staff note"));
+        const note = el("input");
+        note.maxLength = 2000;
+        note.placeholder = "Optional internal note";
+        note.value = order.employee_note || "";
+        noteField.append(note);
+        const save = el("button","","Save update");
+        save.type = "button";
+        save.addEventListener("click", async () => {
+          save.disabled = true;
+          try {
+            await request({
+              action:"update_order",
+              access_token:accessToken,
+              id:order.id,
+              status:select.value,
+              employee_note:note.value
+            });
+            status("employeeStatus","Order updated successfully.","ok");
+            await loadOrders();
+          } catch (error) {
+            status("employeeStatus",error.message,"err");
+            save.disabled = false;
+          }
+        });
+        controls.append(statusField,noteField,save);
+        card.append(controls);
+        $("orders").append(card);
+      });
+    } catch (error) {
+      status("employeeStatus",error.message,"err");
+    }
+  }
+
+  $("signIn").addEventListener("click", async () => {
+    $("signIn").disabled = true;
+    status("loginStatus","Connecting to Discord…");
+    try { await beginLogin(); }
+    catch (error) {
+      status("loginStatus",error.message,"err");
+      $("signIn").disabled = false;
+    }
+  });
+
+  $("signOut").addEventListener("click", () => {
+    clearSession();
+    $("accountPanel").classList.add("hidden");
+    $("customerSection").classList.add("hidden");
+    $("employeeSection").classList.add("hidden");
+    $("loginPanel").classList.remove("hidden");
+    $("signIn").disabled = false;
+    status("loginStatus","You have signed out.");
+  });
+
+  $("refreshOrders").addEventListener("click",loadOrders);
+
+  $("orderForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const button = $("submitOrder");
+    button.disabled = true;
+    status("customerStatus","Sending your catering request…");
+    try {
+      const eventAt = new Date($("eventAt").value);
+      const result = await request({
+        action:"create_order",
+        access_token:accessToken,
+        event_at:eventAt.toISOString(),
+        guest_count:Number($("guestCount").value),
+        delivery_location:$("location").value,
+        order_details:$("orderDetails").value,
+        dietary_requirements:$("dietary").value,
+        customer_contact:$("contact").value
+      });
+      $("orderForm").reset();
+      status("customerStatus","Your catering order has been received. Reference: " + (result.order?.id || "submitted") + ". The WigWam team will review it.","ok");
+    } catch (error) {
+      status("customerStatus",error.message,"err");
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  (async () => {
+    const handled = await completeCallback();
+    if (!handled) await resumeSession();
+  })();
+})();
+</script>
+</body>
+</html>
