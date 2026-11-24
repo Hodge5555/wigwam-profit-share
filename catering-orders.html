@@ -212,6 +212,9 @@ label{color:#e9e4d6}
 .order-search-controls{display:flex;gap:8px;flex-wrap:wrap}
 .order-search-controls input{flex:1 1 220px;min-width:0}
 .payment-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;padding:12px;border:1px solid #49400f;border-radius:11px;background:#13120d}
+.event-countdown{display:flex;align-items:center;gap:8px;margin:12px 0 14px;padding:11px 13px;border:1px solid #725b0b;border-radius:10px;background:linear-gradient(100deg,#2a2208,#17150d);color:#ffdc51;font-size:14px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.025em}
+.event-countdown:before{content:"⏱";font-size:17px}
+.event-countdown.countdown-past{border-color:#40553e;background:#101b14;color:#a6dfad}
 .payment-status{font-size:13px;font-weight:950;letter-spacing:.04em}
 .payment-status.paid{color:#8ce0a5}
 .payment-status.unpaid{color:#ffd16b}
@@ -290,6 +293,30 @@ body.page-orders #customerSection{display:none!important}
       timeZoneName: "short"
     }).format(date);
   }
+
+  function formatCountdown(targetTimestamp, now = Date.now()) {
+    const target = Number(targetTimestamp);
+    if (!Number.isFinite(target)) return "Event time unavailable";
+    const remainingSeconds = Math.floor(Math.abs(target - now) / 1000);
+    const days = Math.floor(remainingSeconds / 86400);
+    const hours = Math.floor((remainingSeconds % 86400) / 3600);
+    const minutes = Math.floor((remainingSeconds % 3600) / 60);
+    const seconds = remainingSeconds % 60;
+    const clock = [days + "d",String(hours).padStart(2,"0") + "h",String(minutes).padStart(2,"0") + "m",String(seconds).padStart(2,"0") + "s"].join(" ");
+    return target > now ? "Event starts in " + clock : "Event started " + clock + " ago";
+  }
+
+  function updateOrderCountdowns() {
+    const now = Date.now();
+    document.querySelectorAll("[data-event-countdown]").forEach(element => {
+      element.textContent = formatCountdown(element.dataset.eventTimestamp,now);
+      const target = Number(element.dataset.eventTimestamp);
+      element.classList.toggle("countdown-past",Number.isFinite(target) && target <= now);
+    });
+  }
+
+  // One lightweight timer updates every visible order countdown without reloading orders.
+  setInterval(updateOrderCountdowns,1000);
 
   let accessToken = "";
   let account = null;
@@ -671,6 +698,12 @@ body.page-orders #customerSection{display:none!important}
         summary.append(el("div","small","Received " + formatEasternDateTime(order.created_at)));
         top.append(summary,el("span","tag",String(order.status).replace(/_/g," ")));
         card.append(top);
+
+        const eventCountdown = el("div","event-countdown");
+        eventCountdown.dataset.eventCountdown = "true";
+        eventCountdown.dataset.eventTimestamp = String(new Date(order.event_at).getTime());
+        eventCountdown.textContent = formatCountdown(eventCountdown.dataset.eventTimestamp);
+        card.append(eventCountdown);
 
         const details = el("div","details");
         addDetail(details,"Order reference",order.order_reference ? "#" + order.order_reference : "Legacy order");
