@@ -20,6 +20,30 @@
 (async()=>{
  const state=document.getElementById("state");
  try{
+  const token=sessionStorage.getItem("wigwamCateringAccessToken")||"";
+  const expiry=Number(sessionStorage.getItem("wigwamCateringAccessExpiry")||"0");
+  if(!token||expiry<=Date.now()){
+   window.location.replace("./catering.html");
+   return;
+  }
+  const authResponse=await fetch("https://mztgimetelvfsctqytqj.supabase.co/functions/v1/wigwam-catering",{
+   method:"POST",
+   headers:{"Content-Type":"application/json",apikey:"sb_publishable_C_WY9FIK32q25OD3NYoKhQ_WPXV8SbU"},
+   body:JSON.stringify({action:"session",access_token:token}),
+   cache:"no-store"
+  });
+  const authData=await authResponse.json().catch(()=>({}));
+  if(!authResponse.ok||!authData.user){
+   sessionStorage.removeItem("wigwamCateringAccessToken");
+   sessionStorage.removeItem("wigwamCateringAccessExpiry");
+   sessionStorage.removeItem("wigwamCateringUser");
+   window.location.replace("./catering.html");
+   return;
+  }
+  if(!authData.user.isManagement){
+   window.location.replace("./home.html");
+   return;
+  }
   const parts=await Promise.all(Array.from({length:8},(_,i)=>{
    const name="payload-"+String(i+1).padStart(2,"0")+".txt";
    return fetch(name).then(r=>{if(!r.ok)throw new Error("Could not load "+name);return r.text()});
