@@ -623,19 +623,7 @@ body.page-order #employeeSection{display:none!important}
   <div id="customerStatus" class="status hidden" aria-live="polite"></div>
 </section>
 
-<section class="panel hidden" id="employeeSection">
-  <div class="order-top"><div><h2>Received catering orders</h2><p class="muted">Only Discord members with the Employee or Management role can view and manage this list.</p></div><div class="actions"><button class="secondary" id="refreshOrders" type="button">Refresh orders</button><button class="secondary hidden" id="testOrdersChannel" type="button">Test #orders connection</button></div></div>
-  <div id="employeeStatus" class="status" aria-live="polite">Loading received orders…</div>
-  <div class="order-reference-search">
-    <label for="orderReferenceSearch">Find an order by reference</label>
-    <div class="order-search-controls">
-      <input id="orderReferenceSearch" type="search" inputmode="numeric" placeholder="Enter order reference, e.g. 106 or #106">
-      <button id="searchOrders" type="button">Search</button>
-      <button id="clearOrderSearch" class="secondary" type="button">Clear</button>
-    </div>
-  </div>
-  <div id="orders" class="orders"></div>
-</section>
+
 </main>
 <script>
 (() => {
@@ -752,16 +740,10 @@ body.page-order #employeeSection{display:none!important}
   function showSignedIn(user) {
     account = user;
     const isStaff = Boolean(user.isEmployee || user.isManagement);
-
-    if (PAGE_MODE === "orders" && !isStaff) {
+    if (!(user.isCustomer || isStaff)) {
       window.location.replace("./home.html");
       return;
     }
-    if (PAGE_MODE === "order" && !(user.isCustomer || isStaff)) {
-      window.location.replace("./home.html");
-      return;
-    }
-
     $("loginPanel").classList.add("hidden");
     $("accountPanel").classList.remove("hidden");
     $("welcome").textContent = "Welcome, " + user.displayName;
@@ -770,13 +752,7 @@ body.page-order #employeeSection{display:none!important}
     if (user.isEmployee) roles.push("Employee");
     if (user.isManagement) roles.push("Management");
     $("roleText").textContent = "Signed in as " + roles.join(" and ") + " via Discord";
-
-    const showOrderForm = PAGE_MODE === "order";
-    const showOrderInbox = PAGE_MODE === "orders" && isStaff;
-    $("customerSection").classList.toggle("hidden", !showOrderForm);
-    $("employeeSection").classList.toggle("hidden", !showOrderInbox);
-    $("testOrdersChannel").classList.toggle("hidden", !user.isManagement);
-    if (showOrderInbox) loadOrders();
+    $("customerSection").classList.remove("hidden");
   }
 
   async function completeCallback() {
@@ -1230,20 +1206,6 @@ body.page-order #employeeSection{display:none!important}
   });
 
   initialiseMenuBuilder();
-  $("refreshOrders").addEventListener("click",loadOrders);
-  $("searchOrders").addEventListener("click",loadOrders);
-  $("orderReferenceSearch").addEventListener("keydown",event => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      loadOrders();
-    }
-  });
-  $("clearOrderSearch").addEventListener("click",() => {
-    $("orderReferenceSearch").value = "";
-    loadOrders();
-  });
-  $("testOrdersChannel").addEventListener("click",() => testOrdersChannel($("testOrdersChannel")));
-
   $("orderForm").addEventListener("submit", async event => {
     event.preventDefault();
     const button = $("submitOrder");
