@@ -105,7 +105,46 @@
     }
   }
 
-  $("loadPayments")?.addEventListener("click", () => load(false));
+  const syncButton = $("syncDiscordEmployees");
+  syncButton?.addEventListener("click", async () => {
+    const code = codeField.value.trim();
+    if (!code) {
+      status.className = "status err";
+      status.textContent = "Enter the private Discord posting code above first.";
+      return;
+    }
+    syncButton.disabled = true;
+    status.className = "status";
+    status.textContent = "Reading Discord members with the Employee role and matching them to employee records…";
+    try {
+      const response = await fetch("https://mztgimetelvfsctqytqj.supabase.co/functions/v1/wigwam-sync-employee-role", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": publicKey,
+          "x-wigwam-post-code": code
+        },
+        body: "{}",
+        cache: "no-store"
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || ("Discord sync returned HTTP " + response.status));
+      status.className = "status ok";
+      status.textContent = result.role_members_found + " Employee-role members found. " +
+        result.exact_matches_linked + " linked to employee bonus records; " +
+        result.unmatched_for_review + " unmatched, " +
+        result.ambiguous_for_review + " ambiguous and " +
+        result.existing_mapping_conflicts + " existing mapping conflicts need review.";
+      await load(true);
+    } catch (error) {
+      status.className = "status err";
+      status.textContent = "Could not sync Discord employees: " + error.message;
+    } finally {
+      syncButton.disabled = false;
+    }
+  });
+
+    $("loadPayments")?.addEventListener("click", () => load(false));
 
   // After a new statement has posted, automatically load its new payment list.
   const postStatus = $("postStatus");
