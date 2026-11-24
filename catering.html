@@ -756,7 +756,7 @@ label{color:#e9e4d6}
     if (user.isManagement) roles.push("Management");
     const isStaff = Boolean(user.isEmployee || user.isManagement);
     $("roleText").textContent = "Signed in as " + roles.join(" and ") + " via Discord";
-    $("customerSection").classList.toggle("hidden", !user.isCustomer);
+    $("customerSection").classList.toggle("hidden", !(user.isCustomer || isStaff));
     $("employeeSection").classList.toggle("hidden", !isStaff);
     $("testOrdersChannel").classList.toggle("hidden", !user.isManagement);
     if (isStaff) loadOrders();
@@ -1084,7 +1084,7 @@ label{color:#e9e4d6}
         }
         card.append(claimBar);
 
-        const canChangePayment = Boolean(isMine || account?.isManagement);
+        const canChangePayment = Boolean(account?.isEmployee || account?.isManagement);
         const paymentBar = el("div","payment-bar");
         const paymentLabel = el("div");
         const paid = Boolean(order.is_paid);
@@ -1134,7 +1134,7 @@ label{color:#e9e4d6}
           card.append(managementActions);
         }
 
-        if (isMine) {
+        if (account?.isEmployee || account?.isManagement) {
           const controls = el("div","manage");
           const statusField = el("div","field");
           statusField.append(el("label","","Order status"));
@@ -1183,9 +1183,7 @@ label{color:#e9e4d6}
           card.append(controls);
         } else {
           card.append(el("p","order-manage-disabled",
-            isClaimed
-              ? "This order is being handled by " + (order.claimed_by_display_name || "another employee") + ". You can still view its details."
-              : "Claim this order to update its status or add a staff note."));
+            "Only Employees and Management can process this order."));
         }
         categoryTargets[key].append(card);
       });
