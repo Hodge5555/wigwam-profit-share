@@ -223,6 +223,7 @@ label{color:#e9e4d6}
 
 /* Customer ordering is its own page. Hide the received-orders inbox on this route. */
 body.page-order #employeeSection{display:none!important}
+.time-zone-note{display:block;margin-top:6px;color:#b8b3a4;font-size:11px;line-height:1.4}
 </style>
 </head>
 <body class="page-order">
@@ -254,7 +255,7 @@ body.page-order #employeeSection{display:none!important}
   <p class="muted">Send your request to the WigWam team. An employee will review it and update its status.</p>
   <form id="orderForm">
     <div class="grid">
-      <div class="field"><label for="eventAt">Event date and time</label><input id="eventAt" type="datetime-local" required></div>
+      <div class="field"><label for="eventAt">Event date and time (EST / EDT)</label><input id="eventAt" type="datetime-local" required><small class="time-zone-note">Times are entered in US Eastern Time (New York). EST/EDT changes automatically with daylight saving time.</small></div>
       <div class="field"><label for="guestCount">Number of guests</label><input id="guestCount" type="number" min="1" max="500" step="1" placeholder="e.g. 25" required></div>
       <div class="field full"><label for="location">Collection / delivery location</label><input id="location" maxlength="300" placeholder="Enter the event or delivery location." required></div>
       <div class="field"><label for="fulfilmentMethod">Collection or delivery</label>
@@ -636,6 +637,74 @@ body.page-order #employeeSection{display:none!important}
   const USER_KEY = "wigwamCateringUser";
   const PENDING_KEY = "wigwamCateringOAuthPending";
   const $ = id => document.getElementById(id);
+
+  const EASTERN_TIME_ZONE = "America/New_York";
+
+  function formatEasternDateTime(value) {
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "Not supplied";
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: EASTERN_TIME_ZONE,
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "short"
+    }).format(date);
+  }
+
+
+  function parseEasternDateTimeInput(value) {
+    const match = /^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2})(?::([0-9]{2}))?$/.exec(String(value || ""));
+    if (!match) throw new Error("Enter an event date and time in Eastern Time.");
+
+    const parts = match.slice(1).map(value => Number(value || 0));
+    const [year, month, day, hour, minute, second] = parts;
+    const requestedWallTime = Date.UTC(year, month - 1, day, hour, minute, second);
+    const requestedDate = new Date(requestedWallTime);
+    if (requestedDate.getUTCFullYear() !== year
+      || requestedDate.getUTCMonth() !== month - 1
+      || requestedDate.getUTCDate() !== day
+      || hour > 23 || minute > 59 || second > 59) {
+      throw new Error("Enter a valid event date and time.");
+    }
+
+    const formatter = new Intl.DateTimeFormat("en-US-u-ca-gregory", {
+      timeZone: EASTERN_TIME_ZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23"
+    });
+
+    let utcGuess = requestedWallTime;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const zoned = Object.fromEntries(formatter.formatToParts(new Date(utcGuess))
+        .filter(part => part.type !== "literal")
+        .map(part => [part.type, Number(part.value)]));
+      const representedWallTime = Date.UTC(
+        zoned.year, zoned.month - 1, zoned.day,
+        zoned.hour, zoned.minute, zoned.second
+      );
+      const correction = requestedWallTime - representedWallTime;
+      utcGuess += correction;
+      if (correction === 0) break;
+    }
+
+    const resolved = Object.fromEntries(formatter.formatToParts(new Date(utcGuess))
+      .filter(part => part.type !== "literal")
+      .map(part => [part.type, Number(part.value)]));
+    if (resolved.year !== year || resolved.month !== month || resolved.day !== day
+      || resolved.hour !== hour || resolved.minute !== minute || resolved.second !== second) {
+      throw new Error("That time does not exist in Eastern Time because of the daylight-saving clock change. Choose another time.");
+    }
+    return new Date(utcGuess);
+  }
+
   let accessToken = "";
   let account = null;
 
@@ -1011,13 +1080,13 @@ body.page-order #employeeSection{display:none!important}
         const top = el("div","order-top");
         const summary = el("div");
         summary.append(el("h3","",order.customer_display_name || order.customer_username));
-        summary.append(el("div","small","Received " + new Date(order.created_at).toLocaleString("en-GB")));
+        summary.append(el("div","small","Received " + formatEasternDateTime(order.created_at)));
         top.append(summary,el("span","tag",String(order.status).replace(/_/g," ")));
         card.append(top);
 
         const details = el("div","details");
         addDetail(details,"Order reference",order.order_reference ? "#" + order.order_reference : "Legacy order");
-        addDetail(details,"Event date",new Date(order.event_at).toLocaleString("en-GB"));
+        addDetail(details,"Event date",formatEasternDateTime(order.event_at));
         addDetail(details,"Guests",String(order.guest_count));
         addDetail(details,"Fulfilment",order.fulfilment_method === "delivery" ? "Delivery" : "Collection");
         addDetail(details,"Delivery fee","$" + Number(order.delivery_fee ?? 0).toLocaleString("en-US"));
@@ -1084,7 +1153,7 @@ body.page-order #employeeSection{display:none!important}
         paymentLabel.append(el("span","payment-status " + (paid ? "paid" : "unpaid"),paid ? "✓ PAID" : "● UNPAID"));
         if (paid && order.paid_by_display_name) {
           paymentLabel.append(el("small","payment-meta","Recorded by " + order.paid_by_display_name
-            + (order.paid_at ? " · " + new Date(order.paid_at).toLocaleString("en-GB") : "")));
+            + (order.paid_at ? " · " + formatEasternDateTime(order.paid_at) : "")));
         }
         paymentBar.append(paymentLabel);
         if (canChangePayment) {
@@ -1212,7 +1281,7 @@ body.page-order #employeeSection{display:none!important}
     button.disabled = true;
     status("customerStatus","Sending your catering request…");
     try {
-      const eventAt = new Date($("eventAt").value);
+      const eventAt = parseEasternDateTimeInput($("eventAt").value);
       const result = await request({
         action:"create_order",
         access_token:accessToken,
