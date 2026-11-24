@@ -272,15 +272,17 @@ form{display:grid;gap:14px}.grid{display:grid;grid-template-columns:repeat(2,min
         save.addEventListener("click", async () => {
           save.disabled = true;
           try {
-            await request({
+            const result = await request({
               action:"update_order",
               access_token:accessToken,
               id:order.id,
               status:select.value,
               employee_note:note.value
             });
-            status("employeeStatus","Order updated successfully.","ok");
             await loadOrders();
+            status("employeeStatus",
+              result.notification_message || "Order updated successfully.",
+              result.status_changed && !result.customer_notified ? "err" : "ok");
           } catch (error) {
             status("employeeStatus",error.message,"err");
             save.disabled = false;
@@ -335,7 +337,10 @@ form{display:grid;gap:14px}.grid{display:grid;grid-template-columns:repeat(2,min
         customer_contact:$("contact").value
       });
       $("orderForm").reset();
-      status("customerStatus","Your catering order has been received. Reference: " + (result.order?.id || "submitted") + ". The WigWam team will review it.","ok");
+      status("customerStatus",
+        "Your catering order has been received. Reference: " + (result.order?.id || "submitted") + ". "
+          + (result.notification_message || "The WigWam team will review it."),
+        result.customer_notified ? "ok" : "err");
     } catch (error) {
       status("customerStatus",error.message,"err");
     } finally {
