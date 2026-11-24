@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070707">
+<title>WigWam · Restaurant Management</title>
+<meta name="description" content="Management-only daily restaurant records from WigWam's Discord management category.">
+<style>
+:root{color-scheme:dark;--black:#070707;--panel:#151515;--gold:#ffd000;--white:#f8f5e8;--muted:#b8b3a4;--line:#51420d;--green:#8ee1a7}
+*{box-sizing:border-box}
+html,body{min-height:100%;margin:0;background:#070707;color:var(--white);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+body{background:radial-gradient(ellipse at 50% -15%,rgba(255,208,0,.14),transparent 46%),#070707}
+header{background:rgba(4,4,4,.97);border-bottom:1px solid #776000;box-shadow:0 8px 30px #0008}
+.head{max-width:1180px;margin:auto;padding:13px 22px;min-height:92px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.brand img{width:96px;height:68px;object-fit:contain}
+.brand-copy strong{display:block;color:var(--gold);font-weight:1000;font-size:clamp(20px,3vw,28px);letter-spacing:-.05em}
+.brand-copy small{color:#d9cda0;font-size:9px;font-weight:850;letter-spacing:.17em}
+.nav{display:flex;gap:9px;flex-wrap:wrap}
+button,.btn{border:1px solid #67530c;border-radius:10px;background:#1c1c1c;color:var(--white);font-weight:850;padding:10px 14px;text-decoration:none;cursor:pointer;font-size:13px}
+button.primary{background:linear-gradient(180deg,#ffe36a,#ffc400);color:#111;border-color:#ffda36}
+button:disabled{opacity:.55;cursor:wait}
+main{max-width:1180px;margin:34px auto 65px;padding:0 22px}
+.kicker{color:var(--gold);font-size:10px;font-weight:950;letter-spacing:.2em}
+h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:7px 0;color:#fff}
+.intro{margin-bottom:23px}
+.subtitle{color:var(--muted);margin:8px 0 0;line-height:1.55}
+.status{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#14130e;color:#d9d2bd;margin:18px 0}
+.status.error{border-color:#74312b;background:#211210;color:#ffaaa2}
+.status.ok{border-color:#28543a;background:#102018;color:#a7e9ba}
+.status.hidden{display:none!important}
+.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+.stat{padding:15px;border:1px solid #41370f;border-radius:13px;background:linear-gradient(145deg,#191919,#101010)}
+.stat strong{display:block;color:var(--gold);font-size:25px;line-height:1.1}
+.stat span{display:block;color:var(--muted);font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;margin-top:6px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:22px 0 14px}
+.toolbar p{color:var(--muted);margin:0;font-size:13px}
+.dates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;align-items:start}
+.date-tile{min-width:0;border:1px solid #51420d;border-radius:16px;background:linear-gradient(145deg,#1b1b1b,#101010);box-shadow:0 12px 30px #0006;overflow:hidden}
+.date-tile summary{list-style:none;cursor:pointer;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.date-tile summary::-webkit-details-marker{display:none}
+.date-tile summary:after{content:"＋";color:var(--gold);font-size:20px;font-weight:950}
+.date-tile[open] summary:after{content:"−"}
+.date-heading{min-width:0}
+.date-heading strong{display:block;color:var(--gold);font-size:20px;line-height:1.2}
+.date-heading small{display:block;color:var(--muted);font-size:11px;margin-top:5px}
+.count{flex:0 0 auto;padding:6px 9px;border-radius:999px;background:#302600;color:#ffe36a;font-size:11px;font-weight:950}
+.records{padding:0 13px 13px;display:grid;gap:11px}
+.record{border:1px solid #39331f;border-radius:12px;background:#0d0d0d;padding:14px;min-width:0}
+.record-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:9px}
+.record-top strong{color:#fff;font-size:14px;overflow-wrap:anywhere}
+.record-top time{color:#b6a45a;font-size:11px;font-weight:850}
+.record-content{white-space:pre-wrap;overflow-wrap:anywhere;color:#e4dfd2;font-size:13px;line-height:1.55}
+.embed{margin-top:10px;padding:12px;border-left:3px solid var(--gold);border-radius:7px;background:#17150c}
+.embed h3{font-size:14px;color:var(--gold);margin:0 0 6px}
+.embed p{font-size:12px;color:#dfd8c4;white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 8px}
+.embed-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.embed-field{padding:8px;border:1px solid #37311d;border-radius:8px;background:#101010;min-width:0}
+.embed-field strong{display:block;color:#cdb95e;font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.embed-field span{display:block;color:#eee8d8;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.attachments{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.attachments a,.message-link{font-size:11px;color:var(--gold);font-weight:850}
+.message-link{display:inline-block;margin-top:10px}
+.empty{padding:22px;border:1px dashed #5a4a10;border-radius:14px;color:var(--muted);background:#101010;text-align:center;grid-column:1/-1}
+.hidden{display:none!important}
+@media(max-width:700px){.head{padding:10px 14px}.brand{gap:9px}.brand img{width:75px;height:56px}main{margin:25px auto 45px;padding:0 14px}.summary{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.stat{padding:11px}.stat strong{font-size:20px}.stat span{font-size:9px}.dates{grid-template-columns:1fr}.embed-fields{grid-template-columns:1fr}.date-tile summary{padding:15px}}
+</style>
+</head>
+<body>
+<header><div class="head">
+  <div class="brand">
+    <img src="./assets/wigwam-logo.webp" alt="WigWam logo" width="96" height="68">
+    <div class="brand-copy"><strong>WIGWAM</strong><small>FRESH OFF THE GRILL!</small></div>
+  </div>
+  <nav class="nav" aria-label="Page navigation">
+    <a class="btn" href="./home.html">← Team hub</a>
+    <button id="refresh" class="primary" type="button">Refresh records</button>
+    <button id="signOut" type="button">Sign out</button>
+  </nav>
+</div></header>
+<main>
+  <section class="intro">
+    <span class="kicker">MANAGEMENT ACCESS ONLY</span>
+    <h1>Restaurant Management</h1>
+    <p class="subtitle">Daily records collected from the Restaurant Management Discord category. Each date is shown in its own tile, with the original entries grouped inside.</p>
+  </section>
+  <div id="status" class="status" role="status" aria-live="polite">Checking your Management access…</div>
+  <section id="dashboard" class="hidden">
+    <div class="summary">
+      <div class="stat"><strong id="dateCount">0</strong><span>Recorded dates</span></div>
+      <div class="stat"><strong id="recordCount">0</strong><span>Entries found</span></div>
+      <div class="stat"><strong id="channelCount">0</strong><span>Discord channels</span></div>
+    </div>
+    <div class="toolbar"><p id="lastUpdated">Records are grouped by date.</p><p id="sourceLabel">Source: Restaurant Management category</p></div>
+    <div id="dates" class="dates"></div>
+  </section>
+</main>
+<script>
+(() => {
+  "use strict";
+  const API = "https://mztgimetelvfsctqytqj.supabase.co/functions/v1/wigwam-catering";
+  const PUBLIC_KEY = "sb_publishable_C_WY9FIK32q25OD3NYoKhQ_WPXV8SbU";
+  const TOKEN_KEY = "wigwamCateringAccessToken";
+  const EXPIRY_KEY = "wigwamCateringAccessExpiry";
+  const USER_KEY = "wigwamCateringUser";
+  const CATEGORY_ID = "1540325425971073085";
+  const $ = id => document.getElementById(id);
+
+  async function request(payload) {
+    const response = await fetch(API, {
+      method:"POST",
+      headers:{"Content-Type":"application/json",apikey:PUBLIC_KEY},
+      body:JSON.stringify(payload),
+      cache:"no-store"
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || ("Restaurant management service returned HTTP " + response.status));
+    return data;
+  }
+
+  function redirectToSignIn() {
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(EXPIRY_KEY);
+    sessionStorage.removeItem(USER_KEY);
+    window.location.replace("./catering.html");
+  }
+
+  function showStatus(message,kind) {
+    $("status").textContent = message;
+    $("status").className = "status" + (kind ? " " + kind : "");
+  }
+
+  function parseDateKey(value) {
+    const text = String(value || "").trim();
+    let match = /\b(20\d{2})[-/.](\d{1,2})[-/.](\d{1,2})\b/.exec(text);
+    if (match) return makeDateKey(Number(match[1]),Number(match[2]),Number(match[3]));
+    match = /\b(\d{1,2})[/-](\d{1,2})[/-](20\d{2})\b/.exec(text);
+    if (match) {
+      const first = Number(match[1]);
+      const second = Number(match[2]);
+      const month = first > 12 ? second : first;
+      const day = first > 12 ? first : second;
+      return makeDateKey(Number(match[3]),month,day);
+    }
+    const named = Date.parse(text);
+    if (Number.isFinite(named) && /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\b/i.test(text)) {
+      const date = new Date(named);
+      return makeDateKey(date.getFullYear(),date.getMonth()+1,date.getDate());
+    }
+    return "";
+  }
+
+  function makeDateKey(year,month,day) {
+    if (year < 2000 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) return "";
+    const date = new Date(Date.UTC(year,month-1,day));
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month-1 || date.getUTCDate() !== day) return "";
+    return String(year).padStart(4,"0") + "-" + String(month).padStart(2,"0") + "-" + String(day).padStart(2,"0");
+  }
+
+  function timestampDateKey(value) {
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "undated";
+    const parts = new Intl.DateTimeFormat("en-CA",{
+      timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"
+    }).formatToParts(date);
+    const get = type => parts.find(part => part.type === type)?.value || "";
+    return makeDateKey(Number(get("year")),Number(get("month")),Number(get("day"))) || "undated";
+  }
+
+  function getDateKey(message) {
+    const channelDate = parseDateKey(message.channel_name || "");
+    if (channelDate) return channelDate;
+    for (const embed of message.embeds || []) {
+      for (const field of embed.fields || []) {
+        if (/\b(date|business date|trading date|service date|shift date|record date)\b/i.test(String(field.name || ""))) {
+          const fromField = parseDateKey(field.value || "");
+          if (fromField) return fromField;
+        }
+      }
+      const fromTitle = parseDateKey(embed.title || "");
+      if (fromTitle) return fromTitle;
+    }
+    const content = String(message.content || "");
+    const labelled = /(?:record\s+date|business\s+date|trading\s+date|service\s+date|shift\s+date|date)\s*[:=-]\s*([^\n|]+)/i.exec(content);
+    if (labelled) {
+      const fromContent = parseDateKey(labelled[1]);
+      if (fromContent) return fromContent;
+    }
+    return timestampDateKey(message.timestamp);
+  }
+
+  function displayDate(key) {
+    if (key === "undated") return "Undated records";
+    const parts = key.split("-").map(Number);
+    return new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(parts[0],parts[1]-1,parts[2])));
+  }
+
+  function displayTime(value) {
+    const date = new Date(value);
+    return Number.isFinite(date.getTime())
+      ? new Intl.DateTimeFormat("en-GB",{hour:"2-digit",minute:"2-digit",timeZone:"America/New_York"}).format(date) + " ET"
+      : "Time unavailable";
+  }
+
+  function node(tag,className,text) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (text !== undefined) element.textContent = text;
+    return element;
+  }
+
+  function renderEmbed(parent,embed) {
+    const card = node("section","embed");
+    if (embed.title) card.append(node("h3","",embed.title));
+    if (embed.description) card.append(node("p","",embed.description));
+    if (Array.isArray(embed.fields) && embed.fields.length) {
+      const fields = node("div","embed-fields");
+      embed.fields.forEach(field => {
+        const item = node("div","embed-field");
+        item.append(node("strong","",field.name || "Detail"),node("span","",field.value || "—"));
+        fields.append(item);
+      });
+      card.append(fields);
+    }
+    if (embed.url) {
+      const link = node("a","message-link","Open embedded source");
+      link.href = embed.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      card.append(link);
+    }
+    parent.append(card);
+  }
+
+  function renderRecord(message) {
+    const card = node("article","record");
+    const top = node("div","record-top");
+    top.append(node("strong","",message.channel_name + " · " + (message.author || "Unknown sender")));
+    top.append(node("time","",displayTime(message.timestamp)));
+    card.append(top);
+    if (message.content) card.append(node("div","record-content",message.content));
+    (message.embeds || []).forEach(embed => renderEmbed(card,embed));
+    if (Array.isArray(message.attachments) && message.attachments.length) {
+      const links = node("div","attachments");
+      message.attachments.forEach(file => {
+        const link = node("a","",file.filename || "Open attachment");
+        link.href = file.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        links.append(link);
+      });
+      card.append(links);
+    }
+    const source = node("a","message-link","View original Discord message");
+    source.href = message.jump_url;
+    source.target = "_blank";
+    source.rel = "noopener noreferrer";
+    card.append(source);
+    return card;
+  }
+
+  function renderRecords(data) {
+    const groups = new Map();
+    (data.records || []).forEach(message => {
+      const key = getDateKey(message);
+      if (!groups.has(key)) groups.set(key,[]);
+      groups.get(key).push(message);
+    });
+    const keys = Array.from(groups.keys()).sort((a,b) => b.localeCompare(a));
+    $("dateCount").textContent = String(keys.length);
+    $("recordCount").textContent = String((data.records || []).length);
+    $("channelCount").textContent = String((data.channels || []).length);
+    const container = $("dates");
+    container.replaceChildren();
+    if (!keys.length) {
+      container.append(node("div","empty","No records were found in this Discord category. Check that the category contains text channels and that the WigWam bot can view their message history."));
+    } else {
+      keys.forEach((key,index) => {
+        const messages = groups.get(key).sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        const tile = node("details","date-tile");
+        if (index === 0) tile.open = true;
+        const summary = node("summary","");
+        const heading = node("div","date-heading");
+        heading.append(node("strong","",displayDate(key)),node("small","",messages.length + (messages.length === 1 ? " recorded entry" : " recorded entries")));
+        summary.append(heading,node("span","count",String(messages.length) + " entries"));
+        tile.append(summary);
+        const records = node("div","records");
+        messages.forEach(message => records.append(renderRecord(message)));
+        tile.append(records);
+        container.append(tile);
+      });
+    }
+    $("lastUpdated").textContent = "Last refreshed " + new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short"}).format(new Date(data.retrieved_at || Date.now())) + ".";
+    if (data.truncated) {
+      showStatus("Some channel history exceeded the service's retrieval limit. The page shows the newest records returned; contact an administrator to review the older backlog.", "error");
+    } else if (data.channels.length === 0) {
+      showStatus("The category is visible, but no readable text channels were found.", "error");
+    } else {
+      showStatus("Restaurant records loaded successfully from Discord.", "ok");
+    }
+  }
+
+  async function loadRecords() {
+    const button = $("refresh");
+    button.disabled = true;
+    showStatus("Loading records from the Restaurant Management Discord category…");
+    try {
+      const data = await request({action:"restaurant_management_records",access_token:accessToken,CATEGORY_ID});
+      renderRecords(data);
+      $("dashboard").classList.remove("hidden");
+    } catch (error) {
+      showStatus(error.message || "Restaurant records could not be loaded.", "error");
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  let accessToken = "";
+  async function start() {
+    const expiry = Number(sessionStorage.getItem(EXPIRY_KEY) || "0");
+    accessToken = sessionStorage.getItem(TOKEN_KEY) || "";
+    if (!accessToken || expiry <= Date.now()) {
+      redirectToSignIn();
+      return;
+    }
+    try {
+      const session = await request({action:"session",access_token:accessToken});
+      if (!session.user || !session.user.isManagement) {
+        window.location.replace("./home.html");
+        return;
+      }
+      sessionStorage.setItem(USER_KEY,JSON.stringify(session.user));
+      $("dashboard").classList.remove("hidden");
+      await loadRecords();
+    } catch (error) {
+      showStatus(error.message + " Please sign in again.", "error");
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(EXPIRY_KEY);
+      sessionStorage.removeItem(USER_KEY);
+      window.location.replace("./catering.html");
+    }
+  }
+
+  $("refresh").addEventListener("click",loadRecords);
+  $("signOut").addEventListener("click",redirectToSignIn);
+  start();
+})();
+</script>
+</body>
+</html>
