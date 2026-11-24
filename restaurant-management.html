@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#070707">
 <title>WigWam · Restaurant Management</title>
+<meta name="description" content="Management-only restaurant sales totals from the WigWam sales log channel.">
 <style>
-:root{color-scheme:dark;--black:#070707;--gold:#ffd000;--white:#f8f5e8;--muted:#b8b3a4;--line:#51420d}
+:root{color-scheme:dark;--black:#070707;--panel:#151515;--gold:#ffd000;--white:#f8f5e8;--muted:#b8b3a4;--line:#51420d;--green:#8ee1a7}
 *{box-sizing:border-box}
 html,body{min-height:100%;margin:0;background:#070707;color:var(--white);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
 body{background:radial-gradient(ellipse at 50% -15%,rgba(255,208,0,.14),transparent 46%),#070707}
@@ -18,13 +19,37 @@ header{background:rgba(4,4,4,.97);border-bottom:1px solid #776000;box-shadow:0 8
 .brand-copy small{color:#d9cda0;font-size:9px;font-weight:850;letter-spacing:.17em}
 .nav{display:flex;gap:9px;flex-wrap:wrap}
 button,.btn{border:1px solid #67530c;border-radius:10px;background:#1c1c1c;color:var(--white);font-weight:850;padding:10px 14px;text-decoration:none;cursor:pointer;font-size:13px}
+button.primary{background:linear-gradient(180deg,#ffe36a,#ffc400);color:#111;border-color:#ffda36}
+button:disabled{opacity:.55;cursor:wait}
 main{max-width:1180px;margin:34px auto 65px;padding:0 22px}
 .kicker{color:var(--gold);font-size:10px;font-weight:950;letter-spacing:.2em}
 h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:7px 0;color:#fff}
-#accessStatus{margin-top:18px;padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:#14130e;color:var(--muted)}
-#accessStatus.error{border-color:#74312b;background:#211210;color:#ffaaa2}
+.intro{margin-bottom:23px}
+.subtitle{color:var(--muted);margin:8px 0 0;line-height:1.55}
+#accessStatus,.status{margin-top:18px;padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:#14130e;color:#d9d2bd}
+.status.error,#accessStatus.error{border-color:#74312b;background:#211210;color:#ffaaa2}
+.status.ok{border-color:#28543a;background:#102018;color:#a7e9ba}
 .hidden{display:none!important}
-@media(max-width:700px){.head{padding:10px 14px}.brand{gap:9px}.brand img{width:75px;height:56px}main{margin:25px auto 45px;padding:0 14px}}
+.sales-panel{padding:23px;border:1px solid #68550d;border-radius:18px;background:linear-gradient(145deg,#1d1a0e,#121212 66%);box-shadow:0 15px 38px #0006}
+.sales-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.sales-top h2{color:var(--gold);font-size:17px;letter-spacing:.04em;text-transform:uppercase;margin:0}
+.sales-top p{color:var(--muted);font-size:12px;margin:6px 0 0}
+.total-caption{color:#d8c981;font-size:10px;letter-spacing:.14em;font-weight:950;text-transform:uppercase;margin-top:22px}
+.total-amounts{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:9px}
+.total-item{border:1px solid #51420d;border-radius:13px;background:#090909;padding:15px;min-width:0}
+.total-item strong{display:block;color:#ffd000;font-size:clamp(25px,4vw,38px);font-weight:1000;line-height:1.15;letter-spacing:-.04em;overflow-wrap:anywhere}
+.total-item span{display:block;color:#c9c1a5;font-size:11px;font-weight:850;letter-spacing:.1em;text-transform:uppercase;margin-top:6px}
+.sales-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:17px}
+.stat{padding:13px;border:1px solid #3d3519;border-radius:12px;background:#101010}
+.stat strong{display:block;color:#fff;font-size:20px;line-height:1.2}
+.stat span{display:block;color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.09em;text-transform:uppercase;margin-top:5px}
+.source-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid #40360f;color:var(--muted);font-size:12px}
+.source-row a,.latest-link{color:var(--gold);font-weight:850;text-decoration:none}
+.source-row a:hover,.latest-link:hover{text-decoration:underline}
+.latest{margin-top:13px;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.latest a{color:var(--gold);font-weight:850;text-decoration:none}
+#accessStatus.hidden{display:none!important}
+@media(max-width:700px){.head{padding:10px 14px}.brand{gap:9px}.brand img{width:75px;height:56px}main{margin:25px auto 45px;padding:0 14px}.sales-panel{padding:16px}.sales-stats{grid-template-columns:1fr}.total-amounts{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -35,13 +60,42 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
   </div>
   <nav class="nav" aria-label="Page navigation">
     <a class="btn" href="./home.html">← Team hub</a>
+    <button id="refresh" class="primary" type="button">Refresh sales</button>
     <button id="signOut" type="button">Sign out</button>
   </nav>
 </div></header>
 <main>
-  <span class="kicker">MANAGEMENT ACCESS ONLY</span>
-  <h1>Restaurant Management</h1>
+  <section class="intro">
+    <span class="kicker">MANAGEMENT ACCESS ONLY</span>
+    <h1>Restaurant Management</h1>
+    <p class="subtitle">Previous total sales, calculated from the sales logs posted in the WigWam Discord sales channel.</p>
+  </section>
   <div id="accessStatus" role="status" aria-live="polite">Verifying Management access…</div>
+  <section id="dashboard" class="hidden">
+    <div class="sales-panel">
+      <div class="sales-top">
+        <div>
+          <h2>Total sales to date</h2>
+          <p>All recognized sales log entries from the selected Discord channel.</p>
+        </div>
+        <span class="kicker">AUTO-REFRESH · 60 SEC</span>
+      </div>
+      <div class="total-caption">Previous total sales</div>
+      <div id="totalAmounts" class="total-amounts">
+        <div class="total-item"><strong>Loading…</strong><span>All-time total</span></div>
+      </div>
+      <div class="sales-stats">
+        <div class="stat"><strong id="salesLogCount">—</strong><span>Sales logs counted</span></div>
+        <div class="stat"><strong id="lastSync">—</strong><span>Last successful sync</span></div>
+      </div>
+      <div id="salesStatus" class="status" role="status" aria-live="polite">Reading previous sales logs…</div>
+      <div class="source-row">
+        <span>Source channel: <strong>1540325700572151919</strong></span>
+        <a id="sourceChannelLink" href="#" target="_blank" rel="noopener noreferrer">Open Discord channel ↗</a>
+      </div>
+      <div id="latestLog" class="latest"></div>
+    </div>
+  </section>
 </main>
 <script>
 (() => {
@@ -51,7 +105,11 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
   const TOKEN_KEY = "wigwamCateringAccessToken";
   const EXPIRY_KEY = "wigwamCateringAccessExpiry";
   const USER_KEY = "wigwamCateringUser";
+  const AUTO_REFRESH_MS = 60000;
   const $ = id => document.getElementById(id);
+  let accessToken = "";
+  let refreshing = false;
+  let autoRefreshTimer = null;
 
   function redirectToSignIn() {
     sessionStorage.removeItem(TOKEN_KEY);
@@ -60,37 +118,165 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
     window.location.replace("./catering.html");
   }
 
-  async function verifyManagementAccess() {
-    const token = sessionStorage.getItem(TOKEN_KEY) || "";
+  async function request(payload) {
+    const response = await fetch(API, {
+      method:"POST",
+      headers:{"Content-Type":"application/json",apikey:PUBLIC_KEY},
+      body:JSON.stringify(payload),
+      cache:"no-store"
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || ("Restaurant sales service returned HTTP " + response.status));
+    return data;
+  }
+
+  function money(value,currency) {
+    const amount = Number(value || 0);
+    if (currency === "UNSPECIFIED") {
+      return amount.toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
+    }
+    try {
+      return new Intl.NumberFormat("en-GB",{style:"currency",currency}).format(amount);
+    } catch (_) {
+      return amount.toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2}) + " " + currency;
+    }
+  }
+
+  function dateTime(value) {
+    const date = new Date(value);
+    return Number.isFinite(date.getTime())
+      ? new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short"}).format(date)
+      : "Not available";
+  }
+
+  function node(tag,className,text) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (text !== undefined) element.textContent = text;
+    return element;
+  }
+
+  function renderSales(data) {
+    const amounts = $("totalAmounts");
+    amounts.replaceChildren();
+    const totals = Array.isArray(data.totals) ? data.totals : [];
+    if (!totals.length) {
+      const empty = node("div","total-item");
+      empty.append(node("strong","","No sales logs yet"),node("span","","All-time total"));
+      amounts.append(empty);
+    } else {
+      totals.forEach(item => {
+        const card = node("div","total-item");
+        card.append(
+          node("strong","",money(item.total_amount,item.currency_code) + (item.currency_code === "UNSPECIFIED" ? " *" : "")),
+          node("span","",item.currency_code === "UNSPECIFIED" ? "Total · currency not shown in log" : "Total " + item.currency_code)
+        );
+        amounts.append(card);
+      });
+    }
+
+    $("salesLogCount").textContent = Number(data.log_count || 0).toLocaleString("en-GB");
+    $("lastSync").textContent = dateTime(data.last_synced_at);
+    const latest = $("latestLog");
+    latest.replaceChildren();
+    if (data.latest_log) {
+      latest.append(document.createTextNode(
+        "Latest counted log: " + dateTime(data.latest_log.logged_at) + " · " + (data.latest_log.author || "Unknown") + " · " +
+        money(data.latest_log.amount,data.latest_log.currency_code) + " "
+      ));
+      const link = node("a","latest-link","View log ↗");
+      link.href = data.latest_log.message_url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      latest.append(link);
+    } else {
+      latest.textContent = "No sales log has been counted yet.";
+    }
+
+    if (!data.backfill_complete) {
+      $("salesStatus").className = "status";
+      $("salesStatus").textContent = "Building the previous total from older channel history. " +
+        Number(data.scanned_messages || 0).toLocaleString("en-GB") +
+        " messages scanned in this sync. The total will continue to fill in automatically.";
+    } else if (data.new_messages_pending) {
+      $("salesStatus").className = "status";
+      $("salesStatus").textContent = "Some new messages are still being processed. The next automatic refresh will continue.";
+    } else {
+      $("salesStatus").className = "status ok";
+      $("salesStatus").textContent = "Sales total is up to date. This page checks the channel for new logs every minute while open.";
+      if (totals.some(item => item.currency_code === "UNSPECIFIED")) {
+        $("salesStatus").textContent += " Amounts marked with * did not include a currency symbol or code in the Discord log.";
+      }
+    }
+  }
+
+  async function syncSales(silent) {
+    if (refreshing || !accessToken) return;
+    refreshing = true;
+    $("refresh").disabled = true;
+    if (!silent) {
+      $("salesStatus").className = "status";
+      $("salesStatus").textContent = "Checking the latest sales logs…";
+    }
+    try {
+      const data = await request({action:"restaurant_sales_total",access_token:accessToken});
+      renderSales(data);
+    } catch (error) {
+      $("salesStatus").className = "status error";
+      $("salesStatus").textContent = "Could not update sales: " + (error.message || "Unknown error");
+    } finally {
+      refreshing = false;
+      $("refresh").disabled = false;
+    }
+  }
+
+  async function start() {
     const expiry = Number(sessionStorage.getItem(EXPIRY_KEY) || "0");
-    if (!token || expiry <= Date.now()) {
+    accessToken = sessionStorage.getItem(TOKEN_KEY) || "";
+    if (!accessToken || expiry <= Date.now()) {
       redirectToSignIn();
       return;
     }
 
     try {
-      const response = await fetch(API, {
-        method:"POST",
-        headers:{"Content-Type":"application/json",apikey:PUBLIC_KEY},
-        body:JSON.stringify({action:"session",access_token:token}),
-        cache:"no-store"
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || !result.user) throw new Error(result.error || "Your session could not be verified.");
-      if (!result.user.isManagement) {
+      const session = await request({action:"session",access_token:accessToken});
+      if (!session.user || !session.user.isManagement) {
         window.location.replace("./home.html");
         return;
       }
-      sessionStorage.setItem(USER_KEY,JSON.stringify(result.user));
+      sessionStorage.setItem(USER_KEY,JSON.stringify(session.user));
       $("accessStatus").classList.add("hidden");
+      $("dashboard").classList.remove("hidden");
+
+      // The sales channel link is completed by the authenticated backend response.
+      const data = await request({action:"restaurant_sales_total",access_token:accessToken});
+      $("sourceChannelLink").href = data.channel_url || "https://discord.com/channels/" + data.guild_id + "/1540325700572151919";
+      renderSales(data);
+
+      autoRefreshTimer = window.setInterval(() => {
+        if (document.visibilityState === "visible") syncSales(true);
+      },AUTO_REFRESH_MS);
     } catch (error) {
       $("accessStatus").textContent = error.message || "Access could not be verified.";
       $("accessStatus").classList.add("error");
+      if (/session|sign in|expired|invalid/i.test(error.message || "")) {
+        sessionStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem(EXPIRY_KEY);
+        sessionStorage.removeItem(USER_KEY);
+        window.location.replace("./catering.html");
+      }
     }
   }
 
-  $("signOut").addEventListener("click",redirectToSignIn);
-  verifyManagementAccess();
+  $("refresh").addEventListener("click",() => syncSales(false));
+  $("signOut").addEventListener("click",() => {
+    if (autoRefreshTimer) window.clearInterval(autoRefreshTimer);
+    redirectToSignIn();
+  });
+  document.addEventListener("visibilitychange",() => {
+    if (document.visibilityState === "visible" && accessToken) syncSales(true);
+  });
+  start();
 })();
 </script>
 </body>
