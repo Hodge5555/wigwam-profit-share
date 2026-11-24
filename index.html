@@ -41,7 +41,7 @@
 <section class="card full" id="cateringPanel">
   <h2>Catering orders</h2>
   <p class="notice">Customers can place catering requests. Employees can review and manage received orders using their Discord server role.</p>
-  <div class="actions"><a class="button" href="./catering.html">Open catering orders</a></div>
+  <div class="actions"><a href="./catering.html" style="display:inline-block;padding:11px 16px;border-radius:10px;background:#9e4e12;color:#fff;font-weight:700;text-decoration:none">Open catering orders</a></div>
 </section>`;
   const enhanced = html.replace("</main>", paymentPanel + cateringPanel + "</main>")
     .replace('$("postCode").value="";', '// The posting code stays in this page session for payment updates.');
