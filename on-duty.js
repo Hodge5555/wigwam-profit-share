@@ -16,24 +16,29 @@
     const style = document.createElement("style");
     style.textContent = `
       #wigwam-on-duty-widget {
-        position:fixed;right:max(14px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));
-        z-index:2147483000;display:flex;align-items:center;gap:11px;max-width:calc(100vw - 28px);
-        padding:10px 14px;border:1px solid #80670b;border-radius:14px;
-        background:rgba(10,10,10,.96);color:#f8f5e8;box-shadow:0 8px 28px #0009;
-        backdrop-filter:blur(10px);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+        position:static;z-index:2;display:flex;flex:0 0 auto;align-items:center;gap:7px;
+        width:max-content;max-width:100%;margin-left:12px;padding:7px 10px;
+        border:1px solid #80670b;border-radius:12px;
+        background:rgba(10,10,10,.96);color:#f8f5e8;box-shadow:0 4px 16px #0008;
+        font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
         pointer-events:none
       }
-      #wigwam-on-duty-widget .wigwam-duty-dot{width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#d9a928;box-shadow:0 0 11px #d9a92888}
-      #wigwam-on-duty-widget[data-state="live"] .wigwam-duty-dot{background:#65d98a;box-shadow:0 0 11px #65d98a99}
-      #wigwam-on-duty-widget[data-state="error"] .wigwam-duty-dot{background:#e39a58;box-shadow:0 0 11px #e39a5888}
-      #wigwam-on-duty-widget .wigwam-duty-copy{display:grid;grid-template-columns:auto auto;align-items:center;column-gap:10px;row-gap:2px;min-width:0}
-      #wigwam-on-duty-widget .wigwam-duty-label{grid-column:1/-1;color:#d9cda0;font-size:9px;font-weight:900;letter-spacing:.15em;line-height:1.2}
-      #wigwam-on-duty-widget .wigwam-duty-count{color:#ffd000;font-size:23px;font-weight:1000;line-height:1.05;font-variant-numeric:tabular-nums}
-      #wigwam-on-duty-widget .wigwam-duty-detail{align-self:center;color:#b8b3a4;font-size:10px;line-height:1.3;white-space:nowrap}
-      @media(max-width:480px){
-        #wigwam-on-duty-widget{right:10px;bottom:10px;padding:8px 11px}
-        #wigwam-on-duty-widget .wigwam-duty-count{font-size:20px}
-        #wigwam-on-duty-widget .wigwam-duty-detail{font-size:9px}
+      #wigwam-on-duty-widget .wigwam-duty-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#d9a928;box-shadow:0 0 8px #d9a92888}
+      #wigwam-on-duty-widget[data-state="live"] .wigwam-duty-dot{background:#65d98a;box-shadow:0 0 8px #65d98a99}
+      #wigwam-on-duty-widget[data-state="error"] .wigwam-duty-dot{background:#e39a58;box-shadow:0 0 8px #e39a5888}
+      #wigwam-on-duty-widget .wigwam-duty-copy{display:grid;grid-template-columns:auto auto;align-items:center;column-gap:6px;row-gap:1px;min-width:0}
+      #wigwam-on-duty-widget .wigwam-duty-label{grid-column:1/-1;color:#d9cda0;font-size:8px;font-weight:900;letter-spacing:.12em;line-height:1.2;white-space:nowrap}
+      #wigwam-on-duty-widget .wigwam-duty-count{color:#ffd000;font-size:21px;font-weight:1000;line-height:1.05;font-variant-numeric:tabular-nums}
+      #wigwam-on-duty-widget .wigwam-duty-detail{align-self:center;color:#b8b3a4;font-size:8px;line-height:1.3;white-space:nowrap}
+      @media(max-width:760px){
+        header .top,header .head,header.wigwam-brandbar{flex-wrap:wrap}
+        #wigwam-on-duty-widget{margin-left:auto;padding:6px 8px}
+      }
+      @media(max-width:420px){
+        #wigwam-on-duty-widget{gap:5px;margin-left:8px;padding:5px 7px}
+        #wigwam-on-duty-widget .wigwam-duty-label{font-size:7px;letter-spacing:.08em}
+        #wigwam-on-duty-widget .wigwam-duty-count{font-size:19px}
+        #wigwam-on-duty-widget .wigwam-duty-detail{font-size:7px}
       }
     `;
     document.head.appendChild(style);
@@ -68,7 +73,16 @@
 
     copy.append(label, countElement, detailElement);
     widget.append(dotElement, copy);
-    document.body.appendChild(widget);
+
+    const header = document.querySelector("header");
+    const brand = header && header.querySelector(".wigwam-brand-lockup, .brand-lockup, .brand");
+    if (brand && brand.parentElement) {
+      brand.insertAdjacentElement("afterend", widget);
+    } else if (header) {
+      header.appendChild(widget);
+    } else {
+      document.body.insertBefore(widget, document.body.firstChild);
+    }
   }
 
   function setUnavailable(message) {
@@ -110,7 +124,7 @@
         ? updated.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
         : "just now";
       detailElement.textContent = "Live · " + time;
-      widget.title = 'Live count from Discord's "Clocked In" role. Updated ' + time;
+      widget.title = "Live count from Discord's Clocked In role. Updated " + time;
     } catch (error) {
       console.warn("WigWam on-duty count could not refresh:", error);
       setUnavailable(lastSuccessfulCount === null ? "Live count unavailable" : "Update failed · last count " + lastSuccessfulCount);
