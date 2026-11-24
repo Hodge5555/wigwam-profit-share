@@ -135,7 +135,6 @@
         result.unmatched_for_review + " unmatched, " +
         result.ambiguous_for_review + " ambiguous and " +
         result.existing_mapping_conflicts + " existing mapping conflicts need review.";
-      await load(true);
     } catch (error) {
       status.className = "status err";
       status.textContent = "Could not sync Discord employees: " + error.message;
