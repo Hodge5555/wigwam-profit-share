@@ -157,6 +157,7 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
   }
 
   function renderSales(data) {
+    if (data.channel_url) $("sourceChannelLink").href = data.channel_url;
     const amounts = $("totalAmounts");
     amounts.replaceChildren();
     const totals = Array.isArray(data.totals) ? data.totals : [];
@@ -248,10 +249,7 @@ h1{font-size:clamp(28px,4vw,42px);line-height:1.05;letter-spacing:-.05em;margin:
       $("accessStatus").classList.add("hidden");
       $("dashboard").classList.remove("hidden");
 
-      // The sales channel link is completed by the authenticated backend response.
-      const data = await request({action:"restaurant_sales_total",access_token:accessToken});
-      $("sourceChannelLink").href = data.channel_url || "https://discord.com/channels/" + data.guild_id + "/1540325700572151919";
-      renderSales(data);
+      await syncSales(false);
 
       autoRefreshTimer = window.setInterval(() => {
         if (document.visibilityState === "visible") syncSales(true);
