@@ -294,6 +294,13 @@ body.page-orders #customerSection{display:none!important}
     }).format(date);
   }
 
+  function formatCollectionTime(value) {
+    const match = /^([01]\d|2[0-3]):([0-5]\d)/.exec(String(value || ""));
+    if (!match) return "Not selected";
+    const hour = Number(match[1]);
+    return String(hour % 12 || 12) + ":" + match[2] + (hour >= 12 ? " PM" : " AM") + " ET";
+  }
+
   function formatCountdown(targetTimestamp, now = Date.now()) {
     const target = Number(targetTimestamp);
     if (!Number.isFinite(target)) return "Event time unavailable";
@@ -710,6 +717,7 @@ body.page-orders #customerSection{display:none!important}
         addDetail(details,"Event date",formatEasternDateTime(order.event_at));
         addDetail(details,"Guests",String(order.guest_count));
         addDetail(details,"Fulfilment",order.fulfilment_method === "delivery" ? "Delivery" : "Collection");
+        if (order.fulfilment_method === "collection") addDetail(details,"Collection time",formatCollectionTime(order.collection_time));
         addDetail(details,"Delivery fee","$" + Number(order.delivery_fee ?? 0).toLocaleString("en-US"));
         addDetail(details,"Order total","$" + Number(order.order_total ?? order.quote_total ?? 0).toLocaleString("en-US"));
         addDetail(details,"Payment",order.is_paid ? "PAID" : "UNPAID");
