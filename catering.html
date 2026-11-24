@@ -781,8 +781,12 @@ label{color:#e9e4d6}
         iss:params.get("iss")
       });
       saveSession(data);
-      // After a successful Discord authorisation, send everyone to the role-based home dashboard.
-      window.location.replace("./home.html");
+      // Only the dedicated amend-order page may be used as a post-login return target.
+      const returnTo = typeof pending.returnTo === "string"
+        && /^\.\/amend-order\.html\?ref=[0-9]{1,15}$/.test(pending.returnTo)
+        ? pending.returnTo
+        : "./home.html";
+      window.location.replace(returnTo);
     } catch (error) {
       showLoginError(error);
     }
