@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WigWam Profit Share Calculator</title>
+<meta name="application-name" content="WigWam Profit Share">
+<meta name="description" content="WigWam team profit-share calculator with Discord posting and payment tracking.">
+<meta property="og:site_name" content="WigWam Profit Share">
+<meta property="og:title" content="WigWam Profit Share Calculator">
+<meta property="og:description" content="Calculate team profit shares, post to Discord and track payments.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="WigWam Profit Share Calculator">
+<meta name="twitter:description" content="Calculate team profit shares, post to Discord and track payments.">
+<meta name="theme-color" content="#070707"><style>*{box-sizing:border-box}body{font:16px/1.5 Inter,system-ui,sans-serif;margin:0;min-height:100vh;padding:32px;background:radial-gradient(ellipse at 50% -15%,rgba(255,208,0,.16),transparent 45%),#070707;color:#f8f5e8}main{max-width:680px;margin:10vh auto;background:linear-gradient(145deg,#1a1a1a,#101010);padding:30px;border:1px solid #4c3d0a;border-radius:20px;box-shadow:0 22px 70px #0008}h1{color:#ffd000;font-size:clamp(28px,5vw,42px);font-weight:950;letter-spacing:-.05em;text-transform:uppercase}p{line-height:1.6;color:#d2cdbd}</style>
+</head>
+<body>
+<main><h1>WigWam Profit Share</h1><p id="state">Loading the calculator…</p></main>
+<script>
+(async()=>{
+ const state=document.getElementById("state");
+ try{
+  const token=sessionStorage.getItem("wigwamCateringAccessToken")||"";
+  const expiry=Number(sessionStorage.getItem("wigwamCateringAccessExpiry")||"0");
+  if(!token||expiry<=Date.now()){
+   window.location.replace("./catering.html");
+   return;
+  }
+  const authResponse=await fetch("https://mztgimetelvfsctqytqj.supabase.co/functions/v1/wigwam-catering",{
+   method:"POST",
+   headers:{"Content-Type":"application/json",apikey:"sb_publishable_C_WY9FIK32q25OD3NYoKhQ_WPXV8SbU"},
+   body:JSON.stringify({action:"session",access_token:token}),
+   cache:"no-store"
+  });
+  const authData=await authResponse.json().catch(()=>({}));
+  if(!authResponse.ok||!authData.user){
+   sessionStorage.removeItem("wigwamCateringAccessToken");
+   sessionStorage.removeItem("wigwamCateringAccessExpiry");
+   sessionStorage.removeItem("wigwamCateringUser");
+   window.location.replace("./catering.html");
+   return;
+  }
+  if(!authData.user.isManagement){
+   window.location.replace("./home.html");
+   return;
+  }
+  const parts=await Promise.all(Array.from({length:8},(_,i)=>{
+   const name="payload-"+String(i+1).padStart(2,"0")+".txt";
+   return fetch(name).then(r=>{if(!r.ok)throw new Error("Could not load "+name);return r.text()});
+  }));
+  const binary=atob(parts.join(""));
+  const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
+  if(!("DecompressionStream" in window))throw new Error("This browser does not support gzip decoding.");
+  const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+  const html=await new Response(stream).text();
+  const paymentPanel = `
+<section class="card full wigwam-feature-card" id="paymentPanel">
+  <h2>Payment tracking</h2>
+  <p class="notice">After a profit share is posted, mark each person from that posted list as paid. Every change updates the existing Discord embed in place. This tracks the latest posted profit share.</p>
+  <div class="actions"><button class="secondary" id="loadPayments">Load latest payment list</button><button class="secondary" id="syncDiscordEmployees">Sync Discord Employees</button></div>
+  <div id="paymentStatus" class="status">Post a profit share first, then load its payment list. Use the private posting code above.</div>
+  <div id="paymentList" class="payments"></div>
+</section>`;
+  const cateringPanel = `
+<section class="card full wigwam-feature-card" id="cateringPanel">
+  <h2>Catering orders</h2>
+  <p class="notice">Customers can place catering requests. Employees can review and manage received orders using their Discord server role.</p>
+  <div class="actions"><a class="wigwam-catering-link" href="./catering.html">Open catering orders <span aria-hidden="true">→</span></a></div>
+</section>`;
+  const brandCss = `<style id="wigwam-brand-theme">
+  :root{color-scheme:dark;--ww-black:#070707;--ww-panel:#151515;--ww-gold:#ffd000;--ww-white:#f8f5e8;--ww-muted:#bbb6a8;--ww-line:#473a0d}
+  html,body{background-color:#070707!important;color:var(--ww-white)!important}
+  body{background-image:radial-gradient(ellipse at 50% -18%,rgba(255,208,0,.13),transparent 42%),radial-gradient(ellipse at 100% 26%,rgba(255,179,0,.05),transparent 36%)!important;font-family:Inter,ui-sans-serif,system-ui,sans-serif!important}
+  .wigwam-brandbar{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px clamp(16px,4vw,54px);min-height:106px;background:rgba(4,4,4,.97);border-bottom:1px solid #7b6200;box-shadow:0 8px 30px rgba(0,0,0,.45)}
+  .wigwam-brand-lockup{display:flex;align-items:center;gap:16px;min-width:0;color:#fff;text-decoration:none}
+  .wigwam-brand-lockup img{width:116px;height:78px;object-fit:contain;filter:drop-shadow(0 5px 12px rgba(255,200,0,.15))}
+  .wigwam-brand-copy{display:grid;gap:2px}
+  .wigwam-brand-copy strong{font-size:clamp(18px,2.6vw,26px);line-height:1;font-weight:950;letter-spacing:-.05em;color:#ffd000;text-transform:uppercase}
+  .wigwam-brand-copy small{font-size:10px;letter-spacing:.16em;color:#d5cba7;font-weight:800}
+  .wigwam-brand-nav{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .wigwam-brand-nav a{padding:9px 13px;border:1px solid #54450b;border-radius:999px;background:#171717;color:#f8e58a;text-decoration:none;font-size:13px;font-weight:800}
+  .wigwam-brand-nav a:hover{background:#2a230b;border-color:#c49e00;color:#fff}
+  .wigwam-welcome{max-width:1180px;margin:20px auto 0;padding:18px 24px;border:1px solid #51420e;border-radius:18px;background:linear-gradient(112deg,rgba(255,208,0,.12),rgba(21,21,21,.96) 44%,rgba(13,13,13,.98));box-shadow:0 12px 34px rgba(0,0,0,.22)}
+  .wigwam-welcome span{display:block;color:#ffd000;font-size:10px;letter-spacing:.2em;font-weight:950}
+  .wigwam-welcome strong{display:block;font-size:clamp(22px,3vw,31px);line-height:1.1;letter-spacing:-.045em;text-transform:uppercase;color:#fff;margin-top:5px}
+  .wigwam-welcome p{margin:6px 0 0;color:#c9c2ae;font-size:13px}
+  h1,h2,h3,h4{color:#f8f5e8}a{color:#ffd000}
+  main{max-width:1180px!important;width:calc(100% - 32px)!important;margin:26px auto 60px!important}
+  .card,.panel,fieldset,.wigwam-feature-card{background:linear-gradient(145deg,#191919,#101010)!important;color:#f8f5e8!important;border:1px solid #41370f!important;border-radius:18px!important;box-shadow:0 14px 38px rgba(0,0,0,.26)!important}
+  .wigwam-feature-card{padding:24px!important;margin-top:18px!important}
+  .wigwam-feature-card h2{color:#ffd000!important;font-weight:950!important;letter-spacing:-.035em}
+  .wigwam-feature-card .notice,.wigwam-feature-card p{color:#c5beae!important}
+  input,textarea,select{background:#080808!important;color:#fff!important;border:1px solid #514622!important;border-radius:10px!important}
+  input:focus,textarea:focus,select:focus{outline:none!important;border-color:#ffd000!important;box-shadow:0 0 0 3px rgba(255,208,0,.13)!important}
+  input::placeholder,textarea::placeholder{color:#817b6c!important}
+  button,.button,[type=submit],.btn{background:linear-gradient(180deg,#ffe36a,#ffc400)!important;color:#111!important;border:1px solid #ffda36!important;border-radius:10px!important;font-weight:850!important;box-shadow:0 4px 14px rgba(255,196,0,.12)!important}
+  button.secondary,.button.secondary,.btn.secondary{background:#1c1c1c!important;color:#f8f5e8!important;border:1px solid #67530c!important;box-shadow:none!important}
+  .status{background:#1b1a16!important;color:#d5d0c0!important;border:1px solid #4b3d11!important;border-radius:11px!important}
+  .wigwam-catering-link{display:inline-flex;align-items:center;gap:9px;padding:12px 17px;border-radius:10px;background:linear-gradient(180deg,#ffe36a,#ffc400);border:1px solid #ffda36;color:#111!important;text-decoration:none;font-weight:900}
+  table{color:#f8f5e8}th{color:#ffd000}hr{border-color:#39300d}
+  @media(max-width:650px){.wigwam-brandbar{padding:10px 14px;min-height:78px;gap:10px}.wigwam-brand-lockup{gap:9px}.wigwam-brand-lockup img{width:78px;height:58px}.wigwam-brand-copy strong{font-size:17px}.wigwam-brand-copy small{font-size:8px;letter-spacing:.1em}.wigwam-brand-nav{gap:6px}.wigwam-brand-nav a{padding:7px 9px;font-size:11px}.wigwam-welcome{margin:14px 14px 0;padding:16px}main{width:calc(100% - 24px)!important;margin:18px auto 42px!important}.wigwam-feature-card{padding:17px!important}}
+  </style>`;
+  const brandHeader = `<header class="wigwam-brandbar">
+    <a class="wigwam-brand-lockup" href="./" aria-label="WigWam home">
+      <img src="./assets/wigwam-logo.webp" alt="WigWam burger logo" width="116" height="78">
+      <span class="wigwam-brand-copy"><strong>WIGWAM</strong><small>FRESH OFF THE GRILL!</small></span>
+    </a>
+    <aside id="wigwam-on-duty-widget" role="status" aria-live="polite" aria-atomic="true" title='Live count of members with the Discord "Clocked In" role' style="display:flex;flex:0 0 auto;align-items:center;gap:7px;width:max-content;max-width:100%;margin-left:12px;padding:7px 10px;border:1px solid #80670b;border-radius:12px;background:#0a0a0a;color:#f8f5e8;box-shadow:0 4px 16px #0008;font-family:Inter,ui-sans-serif,system-ui,sans-serif">
+      <span class="wigwam-duty-dot" aria-hidden="true" style="width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#d9a928"></span>
+      <span class="wigwam-duty-copy" style="display:grid;grid-template-columns:auto auto;align-items:center;column-gap:6px;row-gap:1px;min-width:0">
+        <span class="wigwam-duty-label" style="grid-column:1/-1;color:#d9cda0;font-size:8px;font-weight:900;letter-spacing:.12em;line-height:1.2;white-space:nowrap">WORKERS ON DUTY</span>
+        <strong class="wigwam-duty-count" style="color:#ffd000;font-size:21px;font-weight:1000;line-height:1.05;font-variant-numeric:tabular-nums">—</strong>
+        <small class="wigwam-duty-detail" style="align-self:center;color:#b8b3a4;font-size:8px;line-height:1.3;white-space:nowrap">Checking Discord…</small>
+      </span>
+    </aside>
+    <nav class="wigwam-brand-nav" aria-label="Main navigation"><a href="./">Profit share</a><a href="./catering.html">Catering</a></nav>
+  </header>
+  <section class="wigwam-welcome"><span>WIGWAM TEAM HUB</span><strong>Fresh off the grill. Built for the team.</strong><p>Profit share · payment tracking · catering orders</p></section>`;
+  const enhanced = html.replace("</main>", paymentPanel + cateringPanel + "</main>")
+    .replace('$("postCode").value="";', '// The posting code stays in this page session for payment updates.');
+  if (enhanced === html) throw new Error("Could not add the payment tracker to the calculator.");
+  const branded = enhanced.replace("</head>", brandCss + "</head>")
+    .replace(/<body([^>]*)>/i, (match, attrs) => match + brandHeader);
+
+  if (!branded.includes('src="./assets/wigwam-logo.webp"')) throw new Error("Could not integrate the WigWam logo.");
+  document.open();document.write(branded);document.close();
+  const goatCounter = document.createElement("script");
+  goatCounter.dataset.goatcounter = "https://hodge5555.goatcounter.com/count";
+  goatCounter.async = true;
+  goatCounter.src = "//gc.zgo.at/count.js";
+  document.body.appendChild(goatCounter);
+  const onDuty = document.createElement("script");
+  onDuty.src = "./on-duty.js?v=3";
+  document.body.appendChild(onDuty);
+  const tracker = document.createElement("script");
+  tracker.src = "./payment-tracker.js?v=employee-role-sync-2";
+  document.body.appendChild(tracker);
+ }catch(error){
+  state.textContent="The calculator could not load: "+error.message+" Please refresh the page or contact the site owner.";
+ }
+})();
+</script>
+</body>
+</html>
