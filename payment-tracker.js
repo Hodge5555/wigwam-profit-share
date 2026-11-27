@@ -11,12 +11,13 @@
   const style = document.createElement("style");
   style.textContent = `
     .payments{display:grid;gap:8px;margin-top:12px}
-    .payment-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
-    .payment-person{font-weight:750;min-width:0;overflow-wrap:anywhere}
+    .payment-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid #d8cdb8;border-radius:10px;background:#fff;color:#171717}
+    .payment-person{color:#171717!important;font-weight:750;min-width:0;overflow-wrap:anywhere}
     .payment-meta{display:flex;align-items:center;gap:10px;flex-shrink:0}
-    .payment-state{font-size:11px;font-weight:800;letter-spacing:.04em;color:var(--muted)}
-    .payment-state.is-paid{color:var(--green)}
-    button.paid{background:#edf8f1;color:var(--green)}
+    .payment-state{font-size:11px;font-weight:850;letter-spacing:.04em;color:#756b59!important}
+    .payment-state.is-paid{color:#16834b!important}
+    .payment-row button.secondary{color:#f8f5e8!important}
+    .payment-row button.paid{background:#ffd000!important;color:#171717!important;border-color:#c49b00!important}
     button:disabled{opacity:.55;cursor:wait}
     @media(max-width:520px){.payment-row{align-items:flex-start;flex-direction:column}.payment-meta{width:100%;justify-content:space-between}}
   `;
