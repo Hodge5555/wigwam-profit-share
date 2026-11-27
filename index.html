@@ -121,9 +121,14 @@
   if (enhanced === html) throw new Error("Could not add the payment tracker to the calculator.");
   const branded = enhanced.replace("</head>", brandCss + "</head>")
     .replace(/<body([^>]*)>/i, (match, attrs) => match + brandHeader);
-  const trackedBranded = branded.replace("</body>", "<script data-goatcounter=\"https://hodge5555.goatcounter.com/count\"\n        async src=\"//gc.zgo.at/count.js\"></script>" + "</body>");
+
   if (!branded.includes('src="./assets/wigwam-logo.webp"')) throw new Error("Could not integrate the WigWam logo.");
-  document.open();document.write(trackedBranded);document.close();
+  document.open();document.write(branded);document.close();
+  const goatCounter = document.createElement("script");
+  goatCounter.dataset.goatcounter = "https://hodge5555.goatcounter.com/count";
+  goatCounter.async = true;
+  goatCounter.src = "//gc.zgo.at/count.js";
+  document.body.appendChild(goatCounter);
   const onDuty = document.createElement("script");
   onDuty.src = "./on-duty.js?v=3";
   document.body.appendChild(onDuty);
