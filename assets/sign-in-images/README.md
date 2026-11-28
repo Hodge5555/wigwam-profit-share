@@ -9,7 +9,7 @@ Upload any image into this folder to change the image shown above the Discord si
 3. Select your image file. The filename can be anything.
 4. Commit the upload to the **main** branch.
 
-The sign-in pages check for the newest image upload automatically and swap the displayed image without a full page reload, usually within about 90 seconds. You do not need to edit or rename any website files.
+The main WigWam page displays the newest image above the Discord authorisation message, and the catering sign-in pages use the same image. Pages check for new uploads automatically and swap the displayed image without a full page reload, usually within about 90 seconds. You do not need to edit or rename any website files.
 
 Supported formats: PNG, JPG/JPEG, GIF, WebP, AVIF, SVG and BMP.
 
