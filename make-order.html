@@ -236,8 +236,14 @@ body.page-order #employeeSection{display:none!important}
 .confirmation-menu li{padding:3px 0}
 .confirmation-total{margin-top:13px;padding-top:12px;border-top:1px solid #473a0d;color:#ffd000;font-weight:900}
 #collectionTimeField.hidden{display:none!important}
+
+.uploaded-image-area{display:flex;justify-content:center;align-items:center;width:100%;margin:0 auto 18px}
+.uploaded-image-area[hidden]{display:none!important}
+.uploaded-image-area img{display:block;width:auto;height:auto;max-width:min(100%,260px);max-height:260px;object-fit:contain;border-radius:8px;box-shadow:0 8px 24px #0006}
+
 </style>
 <script src="./on-duty.js?v=3" defer></script>
+<script src="./uploaded-image.js?v=1" defer></script>
 <script data-goatcounter="https://hodge5555.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </head>
@@ -263,8 +269,8 @@ body.page-order #employeeSection{display:none!important}
 </div></header>
 <main>
 <section class="panel" id="loginPanel">
-  <div class="discord-auth-qr" style="display:flex;justify-content:center;margin:0 auto 18px">
-    <div role="img" aria-label="Discord QR code" style="display:block;flex:0 0 auto;width:clamp(124px,22vw,168px);aspect-ratio:1/1;box-sizing:content-box;padding:8px;background-color:#fff;background-image:url('./assets/discord-qr.png?v=20261128qr-045451');background-repeat:no-repeat;background-position:center;background-size:contain;background-origin:content-box;border:1px solid #776000;border-radius:8px;box-shadow:0 8px 24px #0006;overflow:visible"></div>
+  <div id="uploadedImageArea" class="uploaded-image-area" hidden>
+    <img id="uploadedImage" alt="Uploaded image" decoding="async">
   </div>
   <h2>Sign in with Discord</h2>
   <p class="muted">Use the Discord account that has the Customer or Employee role in the WigWam server.</p>
